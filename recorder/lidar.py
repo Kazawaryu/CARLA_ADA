@@ -328,7 +328,7 @@ class SemanticLidar(Sensor):
         # 0. Initialize lidar_data
         semantic_point = np.array([list(elem) for elem in lidar_data])
 
-        # ========= L1 - Traffic scene compelixity ==========
+        # ========= L1 - Traffic scene complexity ==========
         # 1.1 scan and bev context build
         scan_desc = np.zeros((self.PC_NUM_RING, self.PC_NUM_SECTOR))
         bev_max = np.zeros((self.PC_MAX_RANGE, self.PC_MAX_RANGE))
@@ -369,7 +369,7 @@ class SemanticLidar(Sensor):
         current_entropy_score = bev_entropy / scan_entropy
 
 
-        # ========= L2 - Traffic scene compelixity ==========
+        # ========= L2 - Traffic scene complexity ==========
         # 2.1 get moving object and center point (in fact, we use the ground truth from carla)  
         actor_points, current_trans, label_output = {}, {}, []
 
@@ -394,7 +394,7 @@ class SemanticLidar(Sensor):
 
 
 
-        # ========= L3 - Uncertainty compelixity ==========
+        # ========= L3 - Uncertainty complexity ==========
         # 3.1 calculate the uncertainty (temp tracking) of each object
 
         carla_actor_transform = self.carla_actor.get_transform().location
@@ -449,7 +449,7 @@ class SemanticLidar(Sensor):
         self.last_trans = current_trans
         self.last_entropy = {scan_entropy, bev_entropy, current_entropy_score}
 
-        # ========= L4 - Algorithm feature compelixity ==========
+        # ========= L4 - Algorithm feature complexity ==========
 
 
 

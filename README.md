@@ -8,6 +8,8 @@ Data collection tools with active data acquisition algorithm implemented for CAR
 
 **2023.9.16** Finish L1 and L3 part, at ``./label_tools/lidar_tool``.
 
+**2023.6.23** Finish the main framework design, and basic framework of algorithm.
+
 ## Dependency
 
 - Ubuntu 20.04

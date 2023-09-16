@@ -185,11 +185,6 @@ class SemanticLidar(Sensor):
         return 1 - y 
 
 
-
-    
-
-    # ============== Active Startegy (916) ===================
-
     def cal_3d_iou(self,corners1, corners2):
         iou = 0.76
         iou_2d = 0.8
@@ -315,6 +310,8 @@ class SemanticLidar(Sensor):
         # print("###[LABEL FINISH]###", time.time() - tick,"###[entropy]###", entropy)
         
         return True, labels, 100
+
+    # ============== Active Startegy (916) ===================
     
     def scene_entropy(self,desc,pcd):
         max_pcd = np.max(pcd,axis=0)
@@ -367,23 +364,23 @@ class SemanticLidar(Sensor):
 
         # 1.2  two kind context entropy score calculate
 
-        score = self.scene_entropy(bev_scan, semantic_point[:,:3]) / self.scene_entropy(scan_desc, semantic_point[:,:3])
-
-
+        scan_entropy = self.scene_entropy(scan_desc, semantic_point[:, :3])
+        bev_entropy = self.scene_entropy(bev_scan, semantic_point[:, :3])
+        current_entropy_score = bev_entropy / scan_entropy
 
 
         # ========= L2 - Traffic scene compelixity ==========
         # 2.1 get moving object and center point (in fact, we use the ground truth from carla)  
-        actor_objects, current_trans, actor_labels = {}, {}, []
+        actor_points, current_trans, label_output = {}, {}, []
 
         valid_labels = np.isin(semantic_point[:, 5], list(self.Label_dict.keys()))
         valid_points = semantic_point[valid_labels]
         unique_labels = np.unique(valid_points[:, 4])
         for label in unique_labels:
-            actor_objects[int(label)] = valid_points[valid_points[:, 4] == label]
+            actor_points[int(label)] = valid_points[valid_points[:, 4] == label]
         
         actor_list = self.world.get_actors()
-        filtered_actors = [actor for actor in actor_list if actor.id in actor_objects.keys() and re.match("^vehicle", str(actor.type_id))]
+        filtered_actors = [actor for actor in actor_list if actor.id in actor_points.keys() and re.match("^vehicle", str(actor.type_id))]
         actor_dist = [actor.get_transform().location.distance(self.carla_actor.get_transform().location) for actor in actor_list]
 
         selected_actors = [actor for actor, dist in zip(filtered_actors, actor_dist) if dist < self.Largest_label_range]
@@ -405,7 +402,7 @@ class SemanticLidar(Sensor):
         for actor in selected_actors:
             bbox = actor.bounding_box
             actor_id = actor.id
-            points_collection = actor_objects[actor_id]
+            points_collection = actor_points[actor_id]
             count = len(points_collection)
             volume = 8 * bbox.extent.x * bbox.extent.y * bbox.extent.z
             rho = count / volume
@@ -423,7 +420,7 @@ class SemanticLidar(Sensor):
                 yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
 
                 label_str = "{} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, self.Label_dict[actor.semantic_tags[0]])
-                actor_labels.append(label_str)
+                label_output.append(label_str)
                 current_trans[actor_id] = [cx, cy]
 
             elif rho > self._rho_s: # TODO: times a attenuation parameter here
@@ -446,9 +443,11 @@ class SemanticLidar(Sensor):
                         yaw = (actor.get_transform().rotation.yaw - self.carla_actor.get_transform().rotation.yaw + bbox.rotation.yaw)
                         
                         label_str = "{} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, self.Label_dict[actor.semantic_tags[0]])
-                        actor_labels.append(label_str)
-
+                        label_output.append(label_str)
+        
+        # 3.2 update last lidar frame data
         self.last_trans = current_trans
+        self.last_entropy = {scan_entropy, bev_entropy, current_entropy_score}
 
         # ========= L4 - Algorithm feature compelixity ==========
 

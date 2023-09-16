@@ -44,6 +44,16 @@ class SemanticLidar(Sensor):
         self.Active = True
         self.Largest_label_range = 75       # object labeling range, max 100
             
+
+        # ===== newest version (9.16) parameters =====
+
+        # L1 parameters
+        self.PC_MAX_RANGE = 60
+        self.PC_NUM_RING = 60
+        self.PC_NUM_SECTOR = 60
+        self.PC_ENTROPY_SCORE_LIMIT = 0.4
+
+
         if self.Active:
             self._Hs = 0.8                  # scene entropy 
 
@@ -58,7 +68,7 @@ class SemanticLidar(Sensor):
  
             # self.load_object_detection_model()
 
-            self.last_trans_dict = {}
+            self.last_trans = {}
             
 
 
@@ -80,12 +90,9 @@ class SemanticLidar(Sensor):
         # Save point cloud to [RAW_DATA_PATH]/.../[ID]_[SENSOR_TYPE]/[FRAME_ID].npy
 
         if self.Active:
-            print("use active strategy")
-            # result, labels, score = self.active_manager(lidar_data)
-            result, labels, score = self.one_loop_cal_all_active(lidar_data)
+            result, labels, score = self.one_loop_cal_all_active_old(lidar_data)
             if result:
                 self.save_data(save_dir,sensor_data,lidar_data,labels)
-
         else:
             labels,_ = self.get_label(lidar_data)
             self.save_data(save_dir,sensor_data,lidar_data,labels)
@@ -102,10 +109,7 @@ class SemanticLidar(Sensor):
     def get_label(self,lidar_data):
         labels = []
         objects_dict,ground = self.get_label_centerpoint(lidar_data)
-        if not self.Active:
-            bbox_dict,trans_dict,tags_dict,sensor_trans = self.get_near_boudning_box_by_world()
-        else:
-            bbox_dict,trans_dict,tags_dict,sensor_trans = self.get_area_point_rho_objects(objects_dict)
+        bbox_dict,trans_dict,tags_dict,sensor_trans = self.get_near_boudning_box_by_world()
         for key in bbox_dict:
             if key in objects_dict.keys():
                 temp_bbox = bbox_dict[key]
@@ -168,188 +172,11 @@ class SemanticLidar(Sensor):
         
         return bbox_dict,trans_dict,tags_dict,self.carla_actor.get_transform()
     
-    # ============== Active Startegy ===================
+    # ============== Active Startegy (OLD) ===================
 
-    def active_manager(self,lidar_data):
-
-        # L3-1. Scene Entropy
-        tick = time.time()
-        lidar_data = np.array([list(elem) for elem in lidar_data])
-        entropy_now = self.get_scene_entropy(lidar_data[:,:3])
-        print("#########################################entropy time: ", time.time() - tick)
-
-
-        if self.last_entropy == 3:
-            self.last_entropy = entropy_now
-        elif self.cal_entropy_if_keep(self.last_entropy, entropy_now) or entropy_now < -20000:
-            self.last_entropy = entropy_now
-        else:
-            print("##########################################entropy not change", entropy_now)
-            return False, None, None
-        
-        # L3-2. Area point rho
-        labels, ground_points = self.get_label()
-
-        frequency_score = 0
-
-        # # L4-1.1 max detecting distance
-        # # ground_points = self.cal_segmentated_ground(lidar_data)
-    
-        # max_dist = self.get_max_detecting_distance(ground_points, labels[:,:3])
-
-        # # L4-1.2 valid detecting distance
-        # predict_result = self.cal_detect_result(lidar_data)
-        # det_dist = self.get_detecting_distance(labels, predict_result)
-
-        # dist_score = self.cal_sigmoid(max_dist, det_dist)
-        
-        # # L4-2. detecting precision
-        # precision_score = self.get_detecting_precision(predict_result, labels)
-        
-        # frequency_score = dist_score * precision_score
-
-        return True, labels, frequency_score
-
-
-
-    # ------------- 1. Scene Entropy -------------------
-
-    def get_scene_entropy(self, points):
-        print("###NOW GET SCENE ENTROPY###")
-        voxel_size = 2
-        voxel_max_range = np.max(points, axis=0)
-        voxel_min_range = np.min(points, axis=0)
-
-        voxel_count = [int((voxel_max_range[0] - voxel_min_range[0])/voxel_size),
-                      int((voxel_max_range[1]-voxel_min_range[1])/voxel_size),
-                      int((voxel_max_range[2]-voxel_min_range[2])/voxel_size)]
-        
-        print("###VOXEL COUNT INIT###")
-
-        
-        voxel_scene = np.zeros(voxel_count)
-        for point in points:
-            voxel_scene[int((point[0] - voxel_min_range[0])/voxel_size)][int((point[1] - voxel_min_range[1])/voxel_size)][int((point[2] - voxel_min_range[2])/voxel_size)] += 1
-
-        print("###VOXEL COUNT FINISH###")
-
-        dt = len(points) / ((voxel_max_range[0] - voxel_min_range[0]) * (voxel_max_range[1] - voxel_min_range[1]) * (voxel_max_range[2] - voxel_min_range[2]))
-        entropy = 0
-        for i in range(voxel_count[0]):
-            for j in range(voxel_count[1]):
-                for k in range(voxel_count[2]):
-                    di = voxel_scene[i][j][k]
-                    entropy -= (di / dt) *  math.log10(di / dt)
-
-        print("###ENTROPY FINISH###")
-
-        return entropy
     
     def cal_entropy_if_keep(self, entropy_last, entropy_now):
         return abs(entropy_now - entropy_last) / -entropy_last >= self._Hs
-
-    # ------------- 2. Area point rho ------------------
-
-    def get_area_point_rho_objects(self, obj_dict):
-        bbox_dict = {}
-        trans_dict={}
-        tags_dict = {}
-
-        actors_list = self.world.get_actors()
-        for actor in actors_list:
-            if actor.id in obj_dict.keys() and re.match("^vehicle",str(actor.type_id)):
-                dist = actor.get_transform().location.distance(self.carla_actor.get_transform().location)
-                
-                if dist < self.Largest_label_range:
-                    bbox = actor.bounding_box
-                    count = len(obj_dict[actor.id])
-                    volume = 8 * bbox.extent.x * bbox.extent.y * bbox.extent.z
-                    rho = count / volume
-
-                    if rho > self._rho_b:
-                        # upper big matric
-                        bbox_dict[actor.id] = actor.bounding_box
-                        trans_dict[actor.id] = actor.get_transform()
-                        tags_dict[actor.id] = actor.semantic_tags
-                    elif rho > self._rho_s:
-                        # upper small matric, calculate speed
-                        velocity = actor.get_velocity()
-                        speed = math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-
-                        if speed > self._f_tra:
-                            bbox_dict[actor.id] = actor.bounding_box
-                            trans_dict[actor.id] = actor.get_transform()
-                            tags_dict[actor.id] = actor.semantic_tags
-                        pass
-
-        return bbox_dict, trans_dict, tags_dict, self.carla_actor.get_transform()
-
-    # ------------- 3. Detecting Distance --------------
-
-    def load_ground_segmentation_model(self):
-        try:
-            seg_module_path= "./tools/patchwork-plusplus/build/python_wrapper"
-            sys.path.insert(0, seg_module_path)
-            import pypatchworkpp 
-
-        except ImportError:
-            print("Cannot find Segmentation Module! Maybe you should build it first.")
-            print("See more details in utils/patchwork-plusplus/README.md")
-            exit(1)
-
-        params = pypatchworkpp.Parameters()
-        self.seg_module = pypatchworkpp.patchworkpp(params)
-        
-
-    def cal_segmentated_ground(self,lidar_data):
-        self.seg_module.estimateGround(lidar_data[:,:4])
-        return self.seg_module.getGround()
-    
-    def get_max_detecting_distance(self, ground_points, vehicle_center):
-        # get the max distance from vehicle center to the ground points
-        # vehicle_center is the list of labeled vehicle center points
-        rect = cv2.minAreaRect(ground_points[:,:2])
-        rect_points = cv2.boxPoints(rect)
-        rect_points = np.array(rect_points)
-        A = rect_points[0]
-        B = rect_points[1]
-        C = rect_points[2]
-        D = rect_points[3]
-        rect_center = rect[0]
-        dist = 0
-        
-        for p in vehicle_center:
-            # vector direction, if (BA*Bp)(DC*Dp)>=0, cross first, then judge the direction by the sign of cross product
-            if np.cross(B-A,p-B) * np.cross(D-C,p-D) >= 0 and np.cross(C-B,p-C) * np.cross(A-D,p-A) >= 0:
-                tmp_dist = math.sqrt((p[0]-rect_center[0])**2 + (p[1]-rect_center[1])**2)
-                if tmp_dist > dist:
-                    dist = tmp_dist
-        
-        return dist
-    
-    def load_object_detection_model(self):
-        self.model_tool = pcdet_tool.PCDmodel()
-        self.model_tool.load_model("pointpillar")
-
-        return
-    
-    def cal_detect_result(self,path):
-        data_dict = self.model_tool.load_per_data(path)
-        predict_result = self.model_tool.model.forward(data_dict)
-
-        return predict_result
-    
-    def get_detecting_distance(self,labels,predict_result):
-        pred_boxes = predict_result[0]['pred_boxes'].cpu().numpy() # N*7
-        pred_scores = predict_result[0]['pred_scores'].cpu().numpy() # N
-        pred_labels = predict_result[0]['pred_labels'].cpu().numpy() # N
-
-        dist = 0
-        for i in range(len(pred_boxes)):
-            if pred_scores[i] > 0.6:
-                temp= math.sqrt(pred_boxes[i][0]**2 + pred_boxes[i][1]**2 + pred_boxes[i][2]**2)
-                dist = max(dist, temp)
-            return dist
 
     def cal_sigmoid(self, max_dist, det_dist):
         x = det_dist/ max_dist
@@ -357,73 +184,20 @@ class SemanticLidar(Sensor):
 
         return 1 - y 
 
-    # ------------- 4. Detecting Precision -------------
-
-    def get_detecting_precision(self, predict_result, GT_result):
-        pred_boxes = predict_result[0]['pred_boxes'].cpu().numpy() # N*7
-        pred_scores = predict_result[0]['pred_scores'].cpu().numpy() # N
-        pred_labels = predict_result[0]['pred_labels'].cpu().numpy() # N
-
-        # GT_result format:
-        # list: [x, y, z, w, l, h, yaw, label]
-        # label: 1:Car, 2:Pedestrian, 3:Cyclist
-
-        # calculate the precision of each object
 
 
-
-        return 100
-
-    def get_3d_box(box_size, heading_angle, center):
-        ''' Calculate 3D bounding box corners from its parameterization.
-
-        Input:
-            box_size: tuple of (length,wide,height)
-            heading_angle: rad scalar, clockwise from pos x axis
-            center: tuple of (x,y,z)
-        Output:
-            corners_3d: numpy array of shape (8,3) for 3D box cornders
-        '''
-        def roty(t):
-            c = np.cos(t)
-            s = np.sin(t)
-            return np.array([[c,  0,  s],
-                            [0,  1,  0],
-                            [-s, 0,  c]])
-
-        R = roty(heading_angle)
-        l,w,h = box_size
-        x_corners = [l/2,l/2,-l/2,-l/2,l/2,l/2,-l/2,-l/2];
-        y_corners = [h/2,h/2,h/2,h/2,-h/2,-h/2,-h/2,-h/2];
-        z_corners = [w/2,-w/2,-w/2,w/2,w/2,-w/2,-w/2,w/2];
-        corners_3d = np.dot(R, np.vstack([x_corners,y_corners,z_corners]))
-        corners_3d[0,:] = corners_3d[0,:] + center[0];
-        corners_3d[1,:] = corners_3d[1,:] + center[1];
-        corners_3d[2,:] = corners_3d[2,:] + center[2];
-        corners_3d = np.transpose(corners_3d)
-        return corners_3d
     
 
-    # ============== Active Startegy ===================
+    # ============== Active Startegy (916) ===================
 
-    def cal_BEV_Heatmap(self,points):
-        # calculate the max depth in BEV, and the max depth in the whole scene
-
-        return
-    
-    def cal_BEV_Heatmap_entropy(self):
-
-        return
-    
     def cal_3d_iou(self,corners1, corners2):
         iou = 0.76
         iou_2d = 0.8
 
         return iou,iou_2d
-    
 
 
-    def one_loop_cal_all_active(self,lidar_data):
+    def one_loop_cal_all_active_old(self,lidar_data):
         # 1. Initialize lidar_data
         tick = time.time()
         semantic_points = np.array([list(elem) for elem in lidar_data])
@@ -518,9 +292,9 @@ class SemanticLidar(Sensor):
                         cy = (max_p[1] + min_p[1])/2
 
                         now_trans_dict[actor.id] = [cx,cy]
-                        if actor.id in self.last_trans_dict.keys():
+                        if actor.id in self.last_trans.keys():
                       
-                            delta_trans = [self.last_trans_dict[actor.id][0]-cx, self.last_trans_dict[actor.id][1]-cy]
+                            delta_trans = [self.last_trans[actor.id][0]-cx, self.last_trans[actor.id][1]-cy]
                             delta_dist = np.sqrt(delta_trans[0]**2 + delta_trans[1]**2)
                         
                             if delta_dist > self._f_tra:
@@ -537,92 +311,149 @@ class SemanticLidar(Sensor):
                             else:
                                 print("[delta_dist]", delta_dist)
         
-        self.last_trans_dict = now_trans_dict
+        self.last_trans = now_trans_dict
         # print("###[LABEL FINISH]###", time.time() - tick,"###[entropy]###", entropy)
         
         return True, labels, 100
     
-    def get_vehicle_road_id(self, actor_id):
+    def scene_entropy(self,desc,pcd):
+        max_pcd = np.max(pcd,axis=0)
+        min_pcd = np.min(pcd,axis=0)
+        vt = len(pcd) / (max_pcd[0]-min_pcd[0])*(max_pcd[1]-min_pcd[1])*(max_pcd[2]-min_pcd[2])
+        nonzero_indices = np.nonzero(desc)
+        vi = desc[nonzero_indices]
+        entropy = -np.sum((vi /vt) * np.log(vi /vt))
 
-        return self.world.get_actor(actor_id).get_lane()
-    
-    
-    '''
-    TODO: use new startegy, but not very clear about when crossing lanes
-    1. get detected actor id
-    2. get lane id of self and actor in (1.)
-    3. judge if actors on the same lane.00
-    
-    '''
+        return entropy
 
-    def one_loop_update_frequency(self,ground,path,labels,center_map):
-        # 1. Calculate max detecting distance
-        # use carla lane tools
         
+    def one_loop_cal_all_active_916(self,lidar_data):
+        # 0. Initialize lidar_data
+        semantic_point = np.array([list(elem) for elem in lidar_data])
 
-        max_dist = 0
+        # ========= L1 - Traffic scene compelixity ==========
+        # 1.1 scan and bev context build
+        scan_desc = np.zeros((self.PC_NUM_RING, self.PC_NUM_SECTOR))
+        bev_max = np.zeros((self.PC_MAX_RANGE, self.PC_MAX_RANGE))
+        bev_min = np.zeros((self.PC_MAX_RANGE, self.PC_MAX_RANGE))
+        pt_range = self.PC_MAX_RANGE / 2
+
+        pt_x = semantic_point[:, 0]
+        pt_y = semantic_point[:, 1]
+        pt_z = semantic_point[:, 2]
+
+        azim_range = np.sqrt(pt_x ** 2 + pt_y ** 2)
+        azim_angle = np.rad2deg(np.arctan2(pt_y, pt_x))
+        azim_angle[azim_angle < 0] += 360
+
+        valid_indices = np.where(azim_range < self.PC_MAX_RANGE) 
+        azim_sector = np.floor(azim_angle[valid_indices] / (360 / self.PC_NUM_SECTOR)).astype(np.int32)
+        azim_ring = np.floor(azim_range[valid_indices] / (self.PC_MAX_RANGE / self.PC_NUM_RING)).astype(np.int32)
+
+        np.add.at(scan_desc, (azim_ring, azim_sector), 1)
+
+        valid_indices = np.where((pt_x < pt_range) & (pt_x > -pt_range) & (pt_y < pt_range) & (pt_y > -pt_range))
+        pt_x_valid = pt_x[valid_indices] + pt_range
+        pt_y_valid = pt_y[valid_indices] + pt_range
+        pt_z_valid = pt_z[valid_indices]
+
+        bev_max_indices = (pt_x_valid.astype(int), pt_y_valid.astype(int))
+        np.maximum.at(bev_max, bev_max_indices, pt_z_valid)
+
+        bev_min_indices = (pt_x_valid.astype(int), pt_y_valid.astype(int))
+        np.minimum.at(bev_min, bev_min_indices, pt_z_valid)
+
+        bev_scan = np.subtract(bev_max, bev_min)
+
+        # 1.2  two kind context entropy score calculate
+
+        score = self.scene_entropy(bev_scan, semantic_point[:,:3]) / self.scene_entropy(scan_desc, semantic_point[:,:3])
+
+
+
+
+        # ========= L2 - Traffic scene compelixity ==========
+        # 2.1 get moving object and center point (in fact, we use the ground truth from carla)  
+        actor_objects, current_trans, actor_labels = {}, {}, []
+
+        valid_labels = np.isin(semantic_point[:, 5], list(self.Label_dict.keys()))
+        valid_points = semantic_point[valid_labels]
+        unique_labels = np.unique(valid_points[:, 4])
+        for label in unique_labels:
+            actor_objects[int(label)] = valid_points[valid_points[:, 4] == label]
         
+        actor_list = self.world.get_actors()
+        filtered_actors = [actor for actor in actor_list if actor.id in actor_objects.keys() and re.match("^vehicle", str(actor.type_id))]
+        actor_dist = [actor.get_transform().location.distance(self.carla_actor.get_transform().location) for actor in actor_list]
 
-        # 2. Calculate valid detecting distance
-        data_dict = self.model_tool.load_per_data(path)
-        predict_result = self.model_tool.model.forward(data_dict)
+        selected_actors = [actor for actor, dist in zip(filtered_actors, actor_dist) if dist < self.Largest_label_range]
 
-        pred_boxes = predict_result[0]['pred_boxes'].cpu().numpy() # N*7
-        pred_scores = predict_result[0]['pred_scores'].cpu().numpy() # N
-        pred_labels = predict_result[0]['pred_labels'].cpu().numpy() # N
-
-        det_dist = 0
-
-        # 3. Calculate two distance score
-        x = det_dist/ max_dist
-        y = (1 - np.power(np.e, -self._k_sig * x) )/(1 + np.power(np.e, -self._k_sig * x))
-
-        dist_score = 1 - y
-                    
-                
-        # 4. Calculate detecting precision
-
-        # TODO: Struct the label into a bev map, or when get the GT, update the map currently
-        # here we use a label map to struct the label, each voxel is a list of center
-        # when get the near GT, just calculate the pred center near voxel
-        # if the searching radius is bigger than extent, we could say the pred is fault
+        # 2.2 make a map to struct the actors, and give a basic frequency
 
 
-        # maybe should struct label itself as a struct as well
-
-        label_trans = {1:"Car", 2:"Pedestrian", 3:"Cyclist"}
-        voxel_radius = 8
-        min_x = 0
-        min_y = 0
-
-        for index in len(pred_boxes):
-            temp_center = pred_boxes[index][:3]
-            temp_label = pred_labels[index]
-            temp_lwh = pred_boxes[index][3:6]
-            
-            temp_x = np.int((temp_center[0] - min_x) / voxel_radius) 
-            temp_y = np.int((temp_center[1] - min_y) / voxel_radius) 
-            temp_voxel = center_map[temp_x][temp_y]
-
-            if len(temp_voxel) > 0:
-                for label_str in temp_voxel:
-                    if label_trans[temp_label] == label_str.split(" ")[-1]:
-                        iou, iou_2d = self.cal_3d_iou(temp_lwh, labels[label_str])
-                        if iou > 0.5:
-                            
-                            pass
-                        else:
-                            
-                            pass
 
 
-        pred_score = 0
 
-        # 5. Calculate frequency score
 
-        frequency_score = dist_score * pred_score
-        # update frequency (mean + std)
 
-        return
 
-    
+        # ========= L3 - Uncertainty compelixity ==========
+        # 3.1 calculate the uncertainty (temp tracking) of each object
+
+        carla_actor_transform = self.carla_actor.get_transform().location
+        carla_actor_rotation_yaw = self.carla_actor.get_transform().rotation.yaw
+        for actor in selected_actors:
+            bbox = actor.bounding_box
+            actor_id = actor.id
+            points_collection = actor_objects[actor_id]
+            count = len(points_collection)
+            volume = 8 * bbox.extent.x * bbox.extent.y * bbox.extent.z
+            rho = count / volume
+
+            if rho > self._rho_b: # TODO: times a attenuation parameter here
+                points_collection = np.array([list(elem) for elem in points_collection])
+                max_p = np.max(points_collection, axis=0)
+                min_p = np.min(points_collection, axis=0)
+                cx = (max_p[0] + min_p[0]) / 2
+                cy = (max_p[1] + min_p[1]) / 2
+                cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
+                sx = 2 * bbox.extent.x
+                sy = 2 * bbox.extent.y
+                sz = 2 * bbox.extent.z
+                yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
+
+                label_str = "{} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, self.Label_dict[actor.semantic_tags[0]])
+                actor_labels.append(label_str)
+                current_trans[actor_id] = [cx, cy]
+
+            elif rho > self._rho_s: # TODO: times a attenuation parameter here
+                points_collection = np.array([list(elem) for elem in points_collection])
+                max_p = np.max(points_collection, axis=0)
+                min_p = np.min(points_collection, axis=0)
+                cx = (max_p[0] + min_p[0]) / 2
+                cy = (max_p[1] + min_p[1]) / 2
+
+                current_trans[actor_id] = [cx, cy]
+                if actor.id in self.last_trans.keys():
+                    delta_trans = [self.last_trans[actor.id][0]-cx, self.last_trans[actor.id][1]-cy]
+                    delta_dist = np.sqrt(delta_trans[0]**2 + delta_trans[1]**2)
+
+                    if delta_dist > self._f_tra:
+                        cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
+                        sx = 2*bbox.extent.x
+                        sy = 2*bbox.extent.y
+                        sz = 2*bbox.extent.z
+                        yaw = (actor.get_transform().rotation.yaw - self.carla_actor.get_transform().rotation.yaw + bbox.rotation.yaw)
+                        
+                        label_str = "{} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, self.Label_dict[actor.semantic_tags[0]])
+                        actor_labels.append(label_str)
+
+        self.last_trans = current_trans
+
+        # ========= L4 - Algorithm feature compelixity ==========
+
+
+
+
+
+

@@ -4,9 +4,12 @@ import numpy as np
 import argparse
 import time
 
+
+# GOOD DATA: bev_entropy / scan_entropy < 0.4
+
 class context:
     def init(self):
-        self.PC_MAX_RANGE = 80
+        self.PC_MAX_RANGE = 60
         self.PC_NUM_RING = 60
         self.PC_NUM_SECTOR = 60
 
@@ -22,22 +25,30 @@ class context:
                                     ]) ,count=-1)
         pcd = np.array([list(elem) for elem in pre_pcd])
 
-        if script_mode == 'entropy':
+        if script_mode == 'e':
             t = time.time()
-            print("origin function:")
-            scan_desc,bev_scan = self.l1_context(pcd)
-            print("scan entropy:",self.scene_entropy(scan_desc,pcd))
-            print("bev entropy:",self.scene_entropy(bev_scan,pcd))
+            # print("origin function:")
+            # scan_desc,bev_scan = self.l1_context(pcd)
+            # print("scan entropy:",self.scene_entropy(scan_desc,pcd))
+            # print("bev entropy:",self.scene_entropy(bev_scan,pcd))
+            # print("cost time:",time.time()-t)
+
+            # t = time.time()
+            # print("speed up function:")
+            scan_desc,bev_scan = self.l1_context_spup(pcd)
+            scan_entropy = self.scene_entropy(scan_desc,pcd)
+            bev_entropy = self.scene_entropy(bev_scan,pcd)
+            print("scan entropy:",scan_entropy)
+            print("bev entropy:",bev_entropy)
             print("cost time:",time.time()-t)
 
-            t = time.time()
-            print("speed up function:")
-            scan_desc,bev_scan = self.l1_context_spup(pcd)
-            print("scan entropy:",self.scene_entropy(scan_desc,pcd))
-            print("bev entropy:",self.scene_entropy(bev_scan,pcd))
-            print("cost time:",time.time()-t)
-        elif script_mode == 'vis':
+            print("cal res:", bev_entropy / scan_entropy)
+        elif script_mode == 'v':
             self.vis_pcd(pcd)
+        elif script_mode == 'h':
+            scan_desc,bev_scan = self.l1_context(pcd)
+            self.vis_heatmap(scan_desc)
+            
 
 
     def l1_context(self,pcd):

@@ -452,8 +452,6 @@ class SemanticLidar(Sensor):
 
         # ========= L4 - Algorithm feature complexity ==========
 
-
-
-
+        
 
 

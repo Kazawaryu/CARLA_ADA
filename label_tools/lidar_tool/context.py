@@ -4,15 +4,12 @@ import numpy as np
 import argparse
 import time
 
-
-# GOOD DATA: bev_entropy / scan_entropy < 0.4
-
 class context:
     def init(self):
         self.PC_MAX_RANGE = 60
         self.PC_NUM_RING = 60
         self.PC_NUM_SECTOR = 60
-
+        self.PC_K_SIG = 4
 
     def main(self):
         pcd_path,script_mode = self.config_args()
@@ -213,6 +210,11 @@ class context:
         plt.show()
 
         return
+
+    def sigmoid_func(self,x):
+        y = (1-np.power(np.e, -self.PC_K_SIG * x)) / (1 + np.power(np.e, -self.PC_K_SIG * x))
+
+        return y
 
 
 if __name__ == '__main__':

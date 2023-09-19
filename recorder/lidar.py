@@ -54,6 +54,9 @@ class SemanticLidar(Sensor):
         self.PC_NUM_SECTOR = 60
         self.PC_ENTROPY_SCORE_LIMIT = 0.4
 
+        # L2 parameters
+        self.LD_STD_NOISE = 0.2
+
 
         if self.Active:
             self._Hs = 0.8                  # scene entropy 
@@ -369,6 +372,8 @@ class SemanticLidar(Sensor):
         bev_entropy = self.scene_entropy(bev_scan, semantic_point[:, :3])
         current_entropy_score = bev_entropy / scan_entropy
 
+        
+
 
         # ========= L2 - Traffic scene complexity ==========
         # 2.1 get moving object and center point (in fact, we use the ground truth from carla)  
@@ -389,14 +394,12 @@ class SemanticLidar(Sensor):
         # 2.2 make a map to struct the actors, and give a basic frequency
 
 
-
-
-
-
-
-
         # ========= L3 - Uncertainty complexity ==========
         # 3.1 calculate the uncertainty (temp tracking) of each object
+
+
+        # TIPS: here we just calculate vehicle near 80m, for test
+        temp_vehicle_cnt = 0
 
         carla_actor_transform = self.carla_actor.get_transform().location
         carla_actor_rotation_yaw = self.carla_actor.get_transform().rotation.yaw
@@ -408,49 +411,67 @@ class SemanticLidar(Sensor):
             volume = 8 * bbox.extent.x * bbox.extent.y * bbox.extent.z
             rho = count / volume
 
-            if rho > self._rho_b: # TODO: times a attenuation parameter here
-                points_collection = np.array([list(elem) for elem in points_collection])
-                max_p = np.max(points_collection, axis=0)
-                min_p = np.min(points_collection, axis=0)
-                cx = (max_p[0] + min_p[0]) / 2
-                cy = (max_p[1] + min_p[1]) / 2
-                cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
-                sx = 2 * bbox.extent.x
-                sy = 2 * bbox.extent.y
-                sz = 2 * bbox.extent.z
-                yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
+            # use for test
+            max_p = np.max(points_collection, axis=0)
+            min_p = np.min(points_collection, axis=0)
+            cx = (max_p[0] + min_p[0]) / 2
+            cy = (max_p[1] + min_p[1]) / 2
+            cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
+            sx = 2 * bbox.extent.x
+            sy = 2 * bbox.extent.y
+            sz = 2 * bbox.extent.z
+            yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
 
-                label_str = "{} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, self.Label_dict[actor.semantic_tags[0]])
-                label_output.append(label_str)
-                current_trans[actor_id] = [cx, cy]
-
-            elif rho > self._rho_s: # TODO: times a attenuation parameter here
-                points_collection = np.array([list(elem) for elem in points_collection])
-                max_p = np.max(points_collection, axis=0)
-                min_p = np.min(points_collection, axis=0)
-                cx = (max_p[0] + min_p[0]) / 2
-                cy = (max_p[1] + min_p[1]) / 2
-
-                current_trans[actor_id] = [cx, cy]
-                if actor.id in self.last_trans.keys():
-                    delta_trans = [self.last_trans[actor.id][0]-cx, self.last_trans[actor.id][1]-cy]
-                    delta_dist = np.sqrt(delta_trans[0]**2 + delta_trans[1]**2)
-
-                    if delta_dist > self._f_tra:
-                        cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
-                        sx = 2*bbox.extent.x
-                        sy = 2*bbox.extent.y
-                        sz = 2*bbox.extent.z
-                        yaw = (actor.get_transform().rotation.yaw - self.carla_actor.get_transform().rotation.yaw + bbox.rotation.yaw)
-                        
-                        label_str = "{} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, self.Label_dict[actor.semantic_tags[0]])
-                        label_output.append(label_str)
+            label_str = "{} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, self.Label_dict[actor.semantic_tags[0]])
+            label_output.append(label_str)
+            temp_vehicle_cnt+=1
         
-        # 3.2 update last lidar frame data
-        self.last_trans = current_trans
-        self.last_entropy = {scan_entropy, bev_entropy, current_entropy_score}
+        temp_str = "{} {} {} {}".format(temp_vehicle_cnt,scan_entropy,bev_entropy,current_entropy_score)
+        label_output.append(temp_str)
 
-        # ========= L4 - Algorithm feature complexity ==========
+        #     if rho > self._rho_b: # TODO: times a attenuation parameter here
+        #         points_collection = np.array([list(elem) for elem in points_collection])
+        #         max_p = np.max(points_collection, axis=0)
+        #         min_p = np.min(points_collection, axis=0)
+        #         cx = (max_p[0] + min_p[0]) / 2
+        #         cy = (max_p[1] + min_p[1]) / 2
+        #         cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
+        #         sx = 2 * bbox.extent.x
+        #         sy = 2 * bbox.extent.y
+        #         sz = 2 * bbox.extent.z
+        #         yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
+
+        #         label_str = "{} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, self.Label_dict[actor.semantic_tags[0]])
+        #         label_output.append(label_str)
+        #         current_trans[actor_id] = [cx, cy]
+
+        #     elif rho > self._rho_s: # TODO: times a attenuation parameter here
+        #         points_collection = np.array([list(elem) for elem in points_collection])
+        #         max_p = np.max(points_collection, axis=0)
+        #         min_p = np.min(points_collection, axis=0)
+        #         cx = (max_p[0] + min_p[0]) / 2
+        #         cy = (max_p[1] + min_p[1]) / 2
+
+        #         current_trans[actor_id] = [cx, cy]
+        #         if actor.id in self.last_trans.keys():
+        #             delta_trans = [self.last_trans[actor.id][0]-cx, self.last_trans[actor.id][1]-cy]
+        #             delta_dist = np.sqrt(delta_trans[0]**2 + delta_trans[1]**2)
+
+        #             if delta_dist > self._f_tra:
+        #                 cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
+        #                 sx = 2*bbox.extent.x
+        #                 sy = 2*bbox.extent.y
+        #                 sz = 2*bbox.extent.z
+        #                 yaw = (actor.get_transform().rotation.yaw - self.carla_actor.get_transform().rotation.yaw + bbox.rotation.yaw)
+                        
+        #                 label_str = "{} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, self.Label_dict[actor.semantic_tags[0]])
+        #                 label_output.append(label_str)
+        
+        # # 3.2 update last lidar frame data
+        # self.last_trans = current_trans
+        # self.last_entropy = {scan_entropy, bev_entropy, current_entropy_score}
+
+        # # ========= L4 - Algorithm feature complexity ==========
 
         
 

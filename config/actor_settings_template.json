@@ -3,14 +3,17 @@
     [
         {
             "type": "vehicle.tesla.model3",
+            "name": "vehicle.tesla.model3.master",
             "sensors_setting": "sensor_config_template.json",
-            "spawn_point": 90
+            "spawn_point": 73
         }
-        
     ],
     "other_vehicles":
     {
-        "vehicle_num": 500
-
+        "vehicle_num": 100
+    },
+    "walkers":{
+        "walker_num": 50
     }
 }
+

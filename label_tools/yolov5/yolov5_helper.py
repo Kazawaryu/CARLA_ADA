@@ -21,26 +21,17 @@ LABEL_DATAFRAME = pd.DataFrame(columns=['raw_value', 'color', 'coco_names_index'
                                data=[
                                      # [ 4, (220, 20, 60), 0],
                                      [18, (250, 170, 30), 9],
-                                    #  [12, (220, 220,  0), 80],
-                                    [5, (0, 0, 142), 2],
-                                    # [5, (220, 20, 60), 1],
-                                    # [5, (220, 220, 0), 2],
-                                    # [5, (250, 170, 30), 3],
-                                    # [18, (250, 170, 30), 4],
-                                    # [12, (220, 220,  0), 5],
+                                     [12, (220, 220,  0), 80],
                                ])
 
 TL_LIGHT_LABEL = {'DEFAULT': 9,
                   'RED': 82,
                   'GREEN': 81}
-# TL_LIGHT_LABEL = {'DEFAULT': 0,
-#                   'RED': 1,
-#                   'GREEN': 2}
 
 LABEL_COLORS = np.array([
     # (220, 20, 60),   # Pedestrian
     # (0, 0, 142),     # Vehicle
-    # (220, 220, 0),   # TrafficSign -> COCO INDEX
+    (220, 220, 0),   # TrafficSign -> COCO INDEX
     (250, 170, 30),  # TrafficLight
 ])
 
@@ -57,7 +48,7 @@ COCO_NAMES = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'trai
               'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
               'teddy bear',
               'hair drier', 'toothbrush', 'traffic sign', 'traffic light green', 'traffic light red']
-TRACFFIC_LIGHTS = ['traffic light', "traffic light red", "traffic light green"]
+
 
 def decrease_brightness(img, value=30):
     h, s, v = cv2.split(img)
@@ -67,13 +58,7 @@ def decrease_brightness(img, value=30):
     final_hsv = cv2.merge((h, s, v))
     return final_hsv
 
-def bound_car(img):
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    hsv_img = decrease_brightness(hsv, 80)
-    
-"""
-   check the color of triffic light
-"""
+
 def check_color(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     hsv_img = decrease_brightness(hsv, 80)

@@ -51,5 +51,3 @@ class ActorTree(object):
                 if child_node is not None:
                     print("|- {}".format(child_node.get_actor().name))
         print("------ Actor Tree END ------")
-
-    

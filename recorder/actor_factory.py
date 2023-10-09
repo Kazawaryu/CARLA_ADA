@@ -16,6 +16,7 @@ from recorder.camera import RgbCamera, DepthCamera, SemanticSegmentationCamera, 
 from recorder.lidar import Lidar, SemanticLidar
 from recorder.radar import Radar
 from recorder.vehicle import Vehicle, OtherVehicle
+from recorder.walker import Walker
 from recorder.infrastructure import Infrastructure
 from recorder.world import WorldActor
 from recorder.weather import WeatherActor
@@ -29,6 +30,7 @@ class NodeType(Enum):
     SENSOR = 4
     OTHER_VEHICLE = 5
     WEATHER = 6
+    WALKER = 7
 
 
 class Node(object):
@@ -141,10 +143,14 @@ class ActorFactory(object):
 
         other_vehicle_info = json_actors["other_vehicles"]
         ov_nodes = self.create_other_vehicles(other_vehicle_info)
+
+        walker_info = json_actors["walkers"]
+        walker_nodes = self.create_walkers(walker_info)
         # for other_vehicle in ov_nodes:
             # self.other_cars.append(other_vehicle.get_actor())
             # self.other_cars.append(other_vehicle.get_actor().id)
         root.get_children().extend(ov_nodes)
+        root.get_children().extend(walker_nodes)
 
         # lidar_sensor.get_actor().set_car_list(self.recorde_cars, self.other_cars,self.world)
         lidar_sensor.get_actor().set_world(self.world)
@@ -228,6 +234,39 @@ class ActorFactory(object):
                 other_vehicle_nodes.append(other_vehicle_node)
 
         return other_vehicle_nodes
+    
+    def create_walkers(self, walker_info):
+        blueprints = self.blueprint_lib.filter('walker.*')
+        walker_nodes = []
+
+        try:
+            walker_num = walker_info['walker_num']
+        except (KeyError, ValueError):
+            walker_num = None
+
+        if walker_num:
+            spawn_points = []
+            for i in range(walker_num):
+                spawn_point = carla.Transform()
+                loc = self.world.get_random_location_from_navigation()
+                if (loc != None):
+                    spawn_point.location = loc
+                    spawn_points.append(spawn_point)
+
+            for spawn_point in spawn_points:
+                bp = random.choice(blueprints)
+                try:
+                    carla_actor = self.world.spawn_actor(bp, spawn_point)
+                    walker_object = Walker(uid=self.generate_uid(),
+                                                        name='',
+                                                        base_save_dir="/tmp",
+                                                        carla_actor=carla_actor)
+                    walker_node = Node(walker_object, NodeType.WALKER)
+                    walker_nodes.append(walker_node)
+                except RuntimeError:
+                        continue
+
+        return walker_nodes
 
     def create_infrastructure_node(self, actor_info):
         infrastructure_name = get_name_from_json(actor_info, self.v2x_layer_name_set)

@@ -10,10 +10,10 @@
     ],
     "other_vehicles":
     {
-        "vehicle_num": 100
+        "vehicle_num": 150
     },
     "walkers":{
-        "walker_num": 50
+        "walker_num": 100
     }
 }
 

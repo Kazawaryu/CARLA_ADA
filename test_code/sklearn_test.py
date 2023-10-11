@@ -35,16 +35,43 @@ def draw_3d_graph():
     ax.legend()  
     plt.show()
 
-def combina_all_data_into_one_csv():
-    combina_path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/all_data.csv'
+
+def draw_3d_graph2():
     source_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'
     end_path = '/vehicle.tesla.model3.master/filt.csv'
-    csv_files = [source_dir + '0925_1508'+ end_path , source_dir + '0925_2105' + end_path ,
-                 source_dir + '0925_1624' + end_path, source_dir + '0925_2039' + end_path ,
-                 source_dir + '0925_1532' + end_path, source_dir + '0925_1643'+end_path ,
-                 source_dir + '0925_1612' + end_path, source_dir + '0925_2024' + end_path ,
-                 source_dir + '0925_1544' + end_path, source_dir + '0925_2053' + end_path ]
-    
+    csv_files = [source_dir + '1011_2104'+ end_path ,
+                 source_dir + '1011_2129' + end_path ]
+    cnts = ['150-100', 
+            '75-50']
+
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    i = 0
+
+    for path in csv_files:
+        df = pd.read_csv(path)
+        ax.scatter(df['x'], df['y'], df['z'], label=cnts[i])
+        i+=1
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    ax.legend()  
+    plt.show()
+
+def combina_all_data_into_one_csv():
+    combina_path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/all_data.csv'
+    # source_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'
+    # end_path = '/vehicle.tesla.model3.master/filt.csv'
+    # csv_files = [source_dir + '0925_1508'+ end_path , source_dir + '0925_2105' + end_path ,
+    #              source_dir + '0925_1624' + end_path, source_dir + '0925_2039' + end_path ,
+    #              source_dir + '0925_1532' + end_path, source_dir + '0925_1643'+end_path ,
+    #              source_dir + '0925_1612' + end_path, source_dir + '0925_2024' + end_path ,
+    #              source_dir + '0925_1544' + end_path, source_dir + '0925_2053' + end_path ]
+    source_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'
+    end_path = '/vehicle.tesla.model3.master/filt.csv'
+    csv_files = [source_dir + '1011_2104'+ end_path ,
+                source_dir + '1011_2129' + end_path ]
     data_list = []
 
 
@@ -82,3 +109,4 @@ def make_func(path):
 
 if __name__ == "__main__":
     combina_all_data_into_one_csv()
+    # draw_3d_graph2()

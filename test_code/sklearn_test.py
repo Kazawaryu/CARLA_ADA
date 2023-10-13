@@ -100,31 +100,19 @@ def combina_all_data_into_one_csv():
     return
 
 def show_test_curve():
-    path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/all_data.csv'
-    df = pd.read_csv(path)
-    x = np.array(df['x'])
-    y = np.array(df['y'])
-    z = np.array(df['z'])
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    from sklearn.ensemble import GradientBoostingRegressor
+
+    # 创建示例数据
+    x = np.random.rand(100)
+    y = np.random.rand(100)
+    z = x**2 + y**2  # 示例拟合曲线
+
+    # 训练 GBR 模型
     gbr = GradientBoostingRegressor()
-    X_train = np.column_stack((x, y))
-    y_train = z
-
-    X_train, X_test, y_train, y_test = train_test_split(X_train,y_train, test_size=0.2, random_state=0)
-    scaler = preprocessing.StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-    gbr.fit(X_train, y_train)
-
-
-
-    # # 创建示例数据
-    # x = np.random.rand(100)
-    # y = np.random.rand(100)
-    # z = x**2 + y**2  # 示例拟合曲线
-
-    # # 训练 GBR 模型
-    # gbr = GradientBoostingRegressor()
-    # gbr.fit(np.column_stack((x, y)), z)
+    gbr.fit(np.column_stack((x, y)), z)
 
     # 生成网格点
     X, Y = np.meshgrid(np.linspace(0, 1, 50), np.linspace(0, 1, 50))
@@ -196,7 +184,98 @@ def make_func(path):
     print('Intercept:', model.intercept_)
     print('R-squared:', r2)
 
+def z_standrand_scaler( y_pred, y_test):
+    # make a table to show the accuracy, number of 0 and 1 in y_pred and y_test
+    accuracys = []
+    num_0_pred = []
+    num_1_pred = []
+    num_0_test = []
+    num_1_test = []
+
+    for standard in np.arange(10, 150, 10):
+        y_pred2 = y_pred.copy()
+        y_test2 = y_test.copy()
+        y_pred2[y_pred2 <= standard] = 0
+        y_pred2[y_pred2 > standard] = 1
+        y_test2[y_test2 <= standard] = 0
+        y_test2[y_test2 > standard] = 1
+        accuracy = np.sum(y_pred2 == y_test2) / len(y_test2)
+        accuracys.append(accuracy)
+        num_0_pred.append(np.sum(y_pred2 == 0))
+        num_1_pred.append(np.sum(y_pred2 == 1))
+        num_0_test.append(np.sum(y_test2 == 0))
+        num_1_test.append(np.sum(y_test2 == 1))
+
+    # print the table
+    print('standard, accuracy, num_0_pred, num_1_pred, num_0_test, num_1_test')
+    for i in range(len(accuracys)):
+        print(np.arange(10, 150, 10)[i], accuracys[i], num_0_pred[i], num_1_pred[i], num_0_test[i], num_1_test[i])
+        
+    return
+
+
+
+def test_on_local():
+    from sklearn.ensemble import GradientBoostingRegressor
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+    import pandas as pd
+    import numpy as np
+
+    def evaluate_regression(y_test, y_pred):
+        mse = mean_squared_error(y_test, y_pred)
+        rmse = mean_squared_error(y_test, y_pred, squared=False)
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+        
+        return mse, rmse, mae, r2
+
+    path = '/home/ghosnp/dataset/self_l1/all_data.csv'
+    df = pd.read_csv(path)
+    X_train = np.array([df['x'],df['y']]).T
+    y_train = np.array(df['z'])
+
+    X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2)
+
+    gbr = GradientBoostingRegressor(loss='huber',learning_rate=0.2)
+    gbr.fit(X_train,y_train)
+    y_pred = gbr.predict(X_test)
+    gbr_mse, gbr_rmse, gbr_mae, gbr_r2 = evaluate_regression(y_test, y_pred)
+    print('[GBR x and y]')
+    print('mse: ', gbr_mse)
+    print('rmse: ', gbr_rmse)
+    print('mae: ', gbr_mae)
+    print('r2: ', gbr_r2)
+
+    # vis the test data and curve in 3D
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib import cm
+    import numpy as np
+
+    #生成网格点
+    X, Y = np.meshgrid(np.linspace(0.4, 3, 30), np.linspace(0, 0.14, 30))
+    # X, Y = np.meshgrid(np.linspace(-1.1, 1.1, 30), np.linspace(-4.0, -1.9, 30))
+    Z = gbr.predict(np.column_stack((X.ravel(), Y.ravel())))
+    Z = Z.reshape(X.shape)
+    # Z[Z <= 0] = np.nan
+    fig = plt.figure(figsize=(20,20))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # ax.scatter(X_train[:,0], X_train[:,1], y_train, c='r', marker='o')
+    ax.scatter(X_test[:,0], X_test[:,1], y_test, c='r', marker='o')
+    ax.scatter(X_test[:,0], X_test[:,1], y_pred, c='b', marker='o')
+ 
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    ax.set_title('GBR Regression')
+    ax.plot_surface(X, Y, Z, cmap=cm.viridis, alpha=0.5)
+    plt.show()
+
+
 if __name__ == "__main__":
     # combina_all_data_into_one_csv()
     # draw_3d_graph2()
-    show_test_curve()
+    #show_test_curve()
+    test_on_local()

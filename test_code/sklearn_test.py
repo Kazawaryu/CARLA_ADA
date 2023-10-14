@@ -49,12 +49,16 @@ def draw_3d_graph2():
     end_path = '/vehicle.tesla.model3.master/filt.csv'
     csv_files = [source_dir + '1011_2104'+ end_path ,
                 source_dir + '1011_2129' + end_path,
-                 source_dir + '1012_1456' + end_path,
-                  source_dir+ '1012_1555' + end_path ]
+                source_dir + '1012_1456' + end_path,
+                source_dir + '1012_1555' + end_path,
+                source_dir + '1014_1510' + end_path,
+                source_dir + '1014_1551' + end_path ]
     cnts = ['150-100', 
             '75-50',
             '100-60',
-            '150-100']
+            '150-100',
+            '120-60',
+            '200-100']
 
 
     fig = plt.figure()
@@ -84,8 +88,10 @@ def combina_all_data_into_one_csv():
     end_path = '/vehicle.tesla.model3.master/filt.csv'
     csv_files = [source_dir + '1011_2104'+ end_path ,
                 source_dir + '1011_2129' + end_path,
-                 source_dir + '1012_1456' + end_path,
-                  source_dir+ '1012_1555' + end_path ]
+                source_dir + '1012_1456' + end_path,
+                source_dir + '1012_1555' + end_path,
+                source_dir + '1014_1510' + end_path,
+                source_dir + '1014_1551' + end_path ]
     data_list = []
 
 
@@ -230,7 +236,7 @@ def test_on_local():
         
         return mse, rmse, mae, r2
 
-    path = '/home/ghosnp/dataset/self_l1/all_data.csv'
+    path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/all_data.csv'
     df = pd.read_csv(path)
     X_train = np.array([df['x'],df['y']]).T
     y_train = np.array(df['z'])
@@ -275,7 +281,7 @@ def test_on_local():
 
 
 if __name__ == "__main__":
-    # combina_all_data_into_one_csv()
+    combina_all_data_into_one_csv()
     # draw_3d_graph2()
-    #show_test_curve()
+    # show_test_curve()
     test_on_local()

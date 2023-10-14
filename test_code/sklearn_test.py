@@ -241,6 +241,10 @@ def test_on_local():
     X_train = np.array([df['x'],df['y']]).T
     y_train = np.array(df['z'])
 
+    index = np.where(y_train > 160)
+    X_train = np.concatenate((X_train, X_train[index]), axis=0)
+    y_train = np.concatenate((y_train, y_train[index]), axis=0)
+
     X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2)
 
     gbr = GradientBoostingRegressor(loss='huber',learning_rate=0.2)

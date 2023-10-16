@@ -236,7 +236,8 @@ def test_on_local():
         
         return mse, rmse, mae, r2
 
-    path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/all_data.csv'
+    path = '/home/ghosnp/Project/Carla/ada0.1.0/CARLA_ADA/test_data/new/all_data.csv'
+    # path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/all_data.csv'
     df = pd.read_csv(path)
     X_train = np.array([df['x'],df['y']]).T
     y_train = np.array(df['z'])
@@ -285,7 +286,7 @@ def test_on_local():
 
 
 if __name__ == "__main__":
-    combina_all_data_into_one_csv()
+    # combina_all_data_into_one_csv()
     # draw_3d_graph2()
     # show_test_curve()
     test_on_local()

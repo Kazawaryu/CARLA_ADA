@@ -30,6 +30,9 @@ class ActiveLidar:
         self.PC_NUM_SECTOR = 60
         self.PC_ENTROPY_SCORE_LIMIT = 0.4
 
+        self.PC_MIN_Z = -2.3
+        self.PC_MAX_Z = 0.7
+
         # L2 parameters
         self.LD_STD_NOISE = 0.2
 
@@ -138,6 +141,11 @@ class ActiveLidar:
         pt_y = semantic_pt[:, 1]
         pt_z = semantic_pt[:, 2]
 
+        valid_indices = np.where((pt_z < self.PC_MAX_Z) & (pt_z > self.PC_MIN_Z))     
+        pt_x = pt_x[valid_indices]
+        pt_y = pt_y[valid_indices]
+        pt_z = pt_z[valid_indices]
+
         azim_range = np.sqrt(pt_x ** 2+ pt_y ** 2)
         azim_angle = np.rad2deg(np.arctan2(pt_y, pt_x))
         azim_angle[azim_angle < 0] += 360
@@ -210,10 +218,10 @@ class ActiveLidar:
                 cx = (max_p[0] + min_p[0]) / 2
                 cy = (max_p[1] + min_p[1]) / 2
                 dist = np.sqrt(cx**2 + cy**2)
-                if dist < 0.6 * self.Largest_label_range:
+                if dist < self.PC_MAX_RANGE:
                     actor_cnt += 10
-                else:
-                    actor_cnt += 3
+                # else:
+                #     actor_cnt += 3
             else:
                 points_collection = walker_points[actor.id]
                 max_p = np.max(points_collection, axis=0)
@@ -221,10 +229,10 @@ class ActiveLidar:
                 cx = (max_p[0] + min_p[0]) / 2
                 cy = (max_p[1] + min_p[1]) / 2
                 dist = np.sqrt(cx**2 + cy**2)
-                if dist < 0.5 * self.Largest_label_range:
-                    actor_cnt += 4
-                else:
-                    actor_cnt += 2
+                if dist < self.PC_MAX_RANGE:
+                    actor_cnt += 3
+                # else:
+                #     actor_cnt += 2
 
 
         # for actor in filtered_actors + selected_walkers:

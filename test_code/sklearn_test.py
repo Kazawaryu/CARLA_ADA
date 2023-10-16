@@ -86,12 +86,15 @@ def combina_all_data_into_one_csv():
     #              source_dir + '0925_1544' + end_path, source_dir + '0925_2053' + end_path ]
     source_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'
     end_path = '/vehicle.tesla.model3.master/filt.csv'
-    csv_files = [source_dir + '1011_2104'+ end_path ,
-                source_dir + '1011_2129' + end_path,
-                source_dir + '1012_1456' + end_path,
-                source_dir + '1012_1555' + end_path,
-                source_dir + '1014_1510' + end_path,
-                source_dir + '1014_1551' + end_path ]
+    csv_files = [source_dir + '1016_2100'+ end_path,
+                 source_dir + '1016_2124' + end_path,
+                 source_dir + '1016_2149' + end_path,
+                 source_dir + '1016_2209' + end_path
+             ]
+    cnts = ['100-50',
+            '150-75',
+            '50-25'
+            ]
     data_list = []
 
 
@@ -152,7 +155,7 @@ def fit_func():
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
     gbr.fit(X_train, y_train)
-    X, Y = np.meshgrid(np.linspace(0, 3, 5), np.linspace(0, 0.14, 5))
+    X, Y = np.meshgrid(np.linspace(0, 1.5, 5), np.linspace(0, 0.08, 5))
     Z = gbr.predict(np.column_stack((X.ravel(), Y.ravel())))
     Z = Z.reshape(X.shape)
 
@@ -236,8 +239,8 @@ def test_on_local():
         
         return mse, rmse, mae, r2
 
-    path = '/home/ghosnp/Project/Carla/ada0.1.0/CARLA_ADA/test_data/new/all_data.csv'
-    # path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/all_data.csv'
+    # path = '/home/ghosnp/Project/Carla/ada0.1.0/CARLA_ADA/test_data/new/all_data.csv'
+    path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/all_data.csv'
     df = pd.read_csv(path)
     X_train = np.array([df['x'],df['y']]).T
     y_train = np.array(df['z'])
@@ -265,7 +268,7 @@ def test_on_local():
     import numpy as np
 
     #生成网格点
-    X, Y = np.meshgrid(np.linspace(0.4, 3, 30), np.linspace(0, 0.14, 30))
+    X, Y = np.meshgrid(np.linspace(0, 1.4, 30), np.linspace(0, 0.07, 30))
     # X, Y = np.meshgrid(np.linspace(-1.1, 1.1, 30), np.linspace(-4.0, -1.9, 30))
     Z = gbr.predict(np.column_stack((X.ravel(), Y.ravel())))
     Z = Z.reshape(X.shape)
@@ -286,7 +289,7 @@ def test_on_local():
 
 
 if __name__ == "__main__":
-    # combina_all_data_into_one_csv()
+    combina_all_data_into_one_csv()
     # draw_3d_graph2()
     # show_test_curve()
     test_on_local()

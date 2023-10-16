@@ -53,8 +53,6 @@ def make_linear_func(path):
     print('Intercept:', model.intercept_)
     print('R-squared:', r2)
 
-    
-
 if __name__ == "__main__":
     source = read_parser()
     x_axis = []

@@ -34,23 +34,19 @@ class ActiveLidar:
         self.PC_MAX_Z = 0.7
 
         # L2 parameters
-        self.LD_STD_NOISE = 0.2
+        self.O3D_ACTOR = o3d.geometry.PointCloud()
+        self.PARA_ALPHA = 1.5
 
-
+        # OLD VERSION, NOT USED
         if self.Active:
             self._Hs = 0.8                  # scene entropy 
-
             self._rho_b = 25                # temp object rho 
             self._rho_s = 0                # temp object rho 
             self._f_tra = 1.2                 # tracking task 
-
             self._k_sig = 4                 # parameter value sigimoid 
             self._f_sig = 0.8               # result value sigimoid
-
             self.last_entropy = 3
- 
             # self.load_object_detection_model()
-
             self.last_trans = {}
 
     def one_loop_cal_all_active_old(self,lidar_data):
@@ -130,6 +126,7 @@ class ActiveLidar:
     
 
     def active_920(self, semantic_pt):
+        # S1 - Traffic Scene Score
         # 1. make scan and bev desc
         scan_desc = np.zeros((self.PC_NUM_RING, self.PC_NUM_SECTOR))
         bev_max = np.zeros((self.PC_MAX_RANGE, self.PC_MAX_RANGE))
@@ -146,6 +143,7 @@ class ActiveLidar:
         pt_y = pt_y[valid_indices]
         pt_z = pt_z[valid_indices]
 
+        # 2.1 build scan desc
         azim_range = np.sqrt(pt_x ** 2+ pt_y ** 2)
         azim_angle = np.rad2deg(np.arctan2(pt_y, pt_x))
         azim_angle[azim_angle < 0] += 360
@@ -161,6 +159,7 @@ class ActiveLidar:
         pt_y_valid = pt_y[valid_indices] + pt_range
         pt_z_valid = pt_z[valid_indices]
 
+        # 2.2. build bev scan
         bev_max_indices = (pt_x_valid.astype(int), pt_y_valid.astype(int))
         np.maximum.at(bev_max, bev_max_indices, pt_z_valid)
 
@@ -169,12 +168,14 @@ class ActiveLidar:
 
         bev_scan = np.subtract(bev_max, bev_min)
 
+        # 3. calculate entropy
         scan_entropy = self.scene_entropy(scan_desc, semantic_pt[:, :3])
         bev_entropy = self.scene_entropy(bev_scan, semantic_pt[:, :3])
         current_entropy_score = bev_entropy / scan_entropy
 
-
-
+        
+        # S2 - Driving Scene Score
+        # 1. get vehicle and walker list
         vehicle_points, current_trans, label_output = {}, {}, []
 
         valid_vehicle_labels = np.isin(semantic_pt[:, 5], list(self.Vehicle_tags.keys()))
@@ -183,16 +184,9 @@ class ActiveLidar:
         for label in unique_vehicle_labels:
             vehicle_points[int(label)] = valid_vehicle_points[valid_vehicle_points[:, 4] == label]
             tag = self.Vehicle_tags[valid_vehicle_points[valid_vehicle_points[:, 4] == label][0][5]]
-        print("[pre label]", len(vehicle_points))
 
         actor_list = self.world.get_actors()
         filtered_actors = [actor for actor in actor_list if actor.id in vehicle_points.keys()]
-        # print("[filtered actors]", len(filtered_actors))
-        # actor_dist = [actor.get_transform().location.distance(self.carla_actor.get_transform().location) for actor in actor_list]
-        # selected_actors = [actor for actor, dist in zip(filtered_actors, actor_dist) if dist < self.Largest_label_range]
-        # far_actors = [actor for actor, dist in zip(filtered_actors, actor_dist) if dist >= 0.7 * self.Largest_label_range and dist < self.Largest_label_range]
-        # print("[selected actors]", len(selected_actors), len(far_actors))
-
 
         walker_points = {}
         valid_walker_labels = np.isin(semantic_pt[:, 5], list(self.Walker_tags.keys()))
@@ -204,64 +198,82 @@ class ActiveLidar:
         walker_dist = [actor.get_transform().location.distance(self.carla_actor.get_transform().location) for actor in walker_list]
         selected_walkers = [actor for actor, dist in zip(walker_list, walker_dist) if dist < 0.5 * self.Largest_label_range]        
 
-        # actor_cnt = len(selected_actors) - 0.5 * len(far_actors) + 0.5 * len(selected_walkers)
-        
         actor_cnt = 0
-        # carla_actor_transform = self.carla_actor.get_transform().location
-        # carla_actor_rotation_yaw = self.carla_actor.get_transform().rotation.yaw
+        carla_actor_transform = self.carla_actor.get_transform().location
+        carla_actor_rotation_yaw = self.carla_actor.get_transform().rotation.yaw
 
-        for actor in filtered_actors + walker_list:
-            if actor.id in vehicle_points:
-                points_collection = vehicle_points[actor.id]
-                max_p = np.max(points_collection, axis=0)
-                min_p = np.min(points_collection, axis=0)
-                cx = (max_p[0] + min_p[0]) / 2
-                cy = (max_p[1] + min_p[1]) / 2
-                dist = np.sqrt(cx**2 + cy**2)
-                if dist < self.PC_MAX_RANGE:
-                    actor_cnt += 10
-                # else:
-                #     actor_cnt += 3
-            else:
-                points_collection = walker_points[actor.id]
-                max_p = np.max(points_collection, axis=0)
-                min_p = np.min(points_collection, axis=0)
-                cx = (max_p[0] + min_p[0]) / 2
-                cy = (max_p[1] + min_p[1]) / 2
-                dist = np.sqrt(cx**2 + cy**2)
-                if dist < self.PC_MAX_RANGE:
-                    actor_cnt += 3
-                # else:
-                #     actor_cnt += 2
-
-
-        # for actor in filtered_actors + selected_walkers:
-        #     bbox = actor.bounding_box
-        #     actor_id = actor.id
-        #     if actor_id in vehicle_points:
-        #         points_collection = vehicle_points[actor_id]
-        #         tag = self.Vehicle_tags[actor.semantic_tags[0]]
+        # for actor in filtered_actors + walker_list:
+        #     if actor.id in vehicle_points:
+        #         points_collection = vehicle_points[actor.id]
+        #         max_p = np.max(points_collection, axis=0)
+        #         min_p = np.min(points_collection, axis=0)
+        #         cx = (max_p[0] + min_p[0]) / 2
+        #         cy = (max_p[1] + min_p[1]) / 2
+        #         dist = np.sqrt(cx**2 + cy**2)
+        #         if dist < self.PC_MAX_RANGE:
+        #             actor_cnt += 10
+        #         # else:
+        #         #     actor_cnt += 3
         #     else:
-        #         points_collection = walker_points[actor_id]
-        #         tag = self.Walker_tags[actor.semantic_tags[0]]
+        #         points_collection = walker_points[actor.id]
+        #         max_p = np.max(points_collection, axis=0)
+        #         min_p = np.min(points_collection, axis=0)
+        #         cx = (max_p[0] + min_p[0]) / 2
+        #         cy = (max_p[1] + min_p[1]) / 2
+        #         dist = np.sqrt(cx**2 + cy**2)
+        #         if dist < self.PC_MAX_RANGE:
+        #             actor_cnt += 3
+        #         # else:
+        #         #     actor_cnt += 2
 
-        #     max_p = np.max(points_collection, axis=0)
-        #     min_p = np.min(points_collection, axis=0)
-        #     cx = (max_p[0] + min_p[0]) / 2
-        #     cy = (max_p[1] + min_p[1]) / 2
-        #     cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
-        #     dist = actor.get_transform().location.distance(carla_actor_transform)
+        vehicle_points_dict = {}
+        walker_points_dict = {}
+        label_output = []
 
-        #     sx = 2 * bbox.extent.x
-        #     sy = 2 * bbox.extent.y
-        #     sz = 2 * bbox.extent.z
-        #     yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
+        # 2. calculate mesh count
+        for label in np.unique(semantic_pt[valid_vehicle_labels][:, 4]):
+            vehicle_points_dict[int(label)] = semantic_pt[valid_vehicle_labels & (semantic_pt[:, 4] == label)]
+        for label in np.unique(semantic_pt[valid_walker_labels][:, 4]):
+            walker_points_dict[int(label)] = semantic_pt[valid_walker_labels & (semantic_pt[:, 4] == label)]
 
-        #     label_str = "{} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, dist)
-        #     label_output.append(label_str)
+        for actor in filtered_actors + selected_walkers:
+            bbox = actor.bounding_box
+            actor_id = actor.id
+            tick = time.time()
+            if actor_id in vehicle_points_dict:
+                points_collection = vehicle_points_dict[actor_id]
+                tag = self.Vehicle_tags[points_collection[0, 5]]
+            else:
+                points_collection = walker_points_dict[actor_id]
+                tag = self.Walker_tags[points_collection[0, 5]]
+
+            max_p = np.max(points_collection[:, :3], axis=0)
+            min_p = np.min(points_collection[:, :3], axis=0)
+            cx = (max_p[0] + min_p[0]) / 2
+            cy = (max_p[1] + min_p[1]) / 2
+            cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
+            dist = np.sqrt(cx**2 + cy**2)
+            mesh_cnt = 0
+
+            if dist < self.PC_MAX_RANGE:
+                if actor_id in vehicle_points_dict:
+                    actor_cnt += 10
+                    self.O3D_ACTOR.points = o3d.utility.Vector3dVector(points_collection[:, :3])
+                    mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(self.O3D_ACTOR, self.PARA_ALPHA)
+                    mesh_cnt = len(mesh.triangles)   
+                else:
+                    actor_cnt += 3
+            sx = 2 * bbox.extent.x
+            sy = 2 * bbox.extent.y
+            sz = 2 * bbox.extent.z
+            yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
+
+            label_str = "{} {} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, mesh_cnt, time.time() - tick)
+            label_output.append(label_str)
         
         temp_str = "{} {} {} {} {} {}".format(actor_cnt,scan_entropy,bev_entropy,current_entropy_score, len(filtered_actors), len(selected_walkers))
         label_output.append(temp_str)
 
         return True, label_output, current_entropy_score
+
     

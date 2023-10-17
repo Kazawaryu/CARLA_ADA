@@ -59,7 +59,7 @@ class SemanticLidar(Sensor):
         with open("{}/{:0>10d}.bin".format(save_dir,sensor_data.frame), 'wb') as file:
             file.write(lidar_data)
 
-        with open("{}/{:0>10d}.txt".format(save_dir,sensor_data.frame),'a+') as f:       
+        with open("{}/{:0>10d}.txt".format(save_dir,sensor_data.frame),'a+',encoding='utf-8') as f:       
             for line in labels:
                 print(line,file=f)
 

@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import argparse
 import math
+import time
 
 usable_labels = {12.,14.,15.,16.,19.}
 label_dict = {12.:'Pedestrian',14.:'Car',15.:'Truck',16.:'Bus',18:"Motorcycle",19.:'Bicycle'}
@@ -136,6 +137,24 @@ def save_label(lidar_data, last_dist_dict,fitter):
 # [Visualization Point Cloud Here]
 # ******************************************************************************
 
+def vis_pt(source):
+    import util
+    pre_point = np.fromfile(source, dtype=np.dtype([
+                                    ('x', np.float32),
+                                    ('y', np.float32),
+                                    ('z', np.float32),
+                                    ('CosAngle', np.float32),
+                                    ('ObjIdx', np.uint32),
+                                    ('ObjTag', np.uint32)
+                                ]) ,count=-1)
+    
+    semantic_point = np.array([list(elem) for elem in pre_point])
+    ground,nonground,dect_objects,objects_dict = split_object(semantic_point)
+    _, corner_set, _= get_object_corner(objects_dict,{},util.LShapeFitting())
+
+    open3d_draw_picture(ground,nonground,dect_objects,corner_set)
+
+
 def main():
     import util
     args = parse_config()
@@ -177,6 +196,13 @@ def open3d_draw_picture(ground,nonground,dect_objects,corner_set):
     object_o3d.colors = o3d.utility.Vector3dVector(
         np.array([[1.0, 0.0, 0.0] for _ in range(len(dect_objects))])
     )
+
+    alpha = 1.5
+    tick = time.time()
+    mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(object_o3d, alpha)   
+    print("cost",time.time()-tick)
+    
+    
 
     lines_box = np.array([[0,1],[2,3],[4,5],[6,7],[0,2],[6,4],[1,3],[7,5],[0,6],[2,4],[1,7],[3,5]])
     colors = np.array([[0, 1, 1] for j in range(len(lines_box))])

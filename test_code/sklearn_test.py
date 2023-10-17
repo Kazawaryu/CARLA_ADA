@@ -89,11 +89,18 @@ def combina_all_data_into_one_csv():
     csv_files = [source_dir + '1016_2100'+ end_path,
                  source_dir + '1016_2124' + end_path,
                  source_dir + '1016_2149' + end_path,
-                 source_dir + '1016_2209' + end_path
-             ]
+                 source_dir + '1016_2209' + end_path,
+                 source_dir + '1017_1622' + end_path,
+                 source_dir + '1017_1645' + end_path,
+                 source_dir + '1017_1852' + end_path,
+                ]
     cnts = ['100-50',
             '150-75',
-            '50-25'
+            '50-25',
+            '200-100',
+            '180-90',
+            '160-80',
+            '140-70'
             ]
     data_list = []
 
@@ -245,6 +252,10 @@ def test_on_local():
     X_train = np.array([df['x'],df['y']]).T
     y_train = np.array(df['z'])
 
+    index = np.where(y_train > 120)
+    X_train = np.concatenate((X_train, X_train[index]), axis=0)
+    y_train = np.concatenate((y_train, y_train[index]), axis=0)
+
     index = np.where(y_train > 160)
     X_train = np.concatenate((X_train, X_train[index]), axis=0)
     y_train = np.concatenate((y_train, y_train[index]), axis=0)
@@ -268,7 +279,7 @@ def test_on_local():
     import numpy as np
 
     #生成网格点
-    X, Y = np.meshgrid(np.linspace(0, 1.4, 30), np.linspace(0, 0.07, 30))
+    X, Y = np.meshgrid(np.linspace(0.1, 1.4, 30), np.linspace(0.005, 0.06, 30))
     # X, Y = np.meshgrid(np.linspace(-1.1, 1.1, 30), np.linspace(-4.0, -1.9, 30))
     Z = gbr.predict(np.column_stack((X.ravel(), Y.ravel())))
     Z = Z.reshape(X.shape)
@@ -276,7 +287,6 @@ def test_on_local():
     fig = plt.figure(figsize=(20,20))
     ax = fig.add_subplot(111, projection='3d')
 
-    # ax.scatter(X_train[:,0], X_train[:,1], y_train, c='r', marker='o')
     ax.scatter(X_test[:,0], X_test[:,1], y_test, c='r', marker='o')
     ax.scatter(X_test[:,0], X_test[:,1], y_pred, c='b', marker='o')
  

@@ -28,7 +28,6 @@ class ActiveLidar:
         self.PC_MAX_RANGE = 60
         self.PC_NUM_RING = 60
         self.PC_NUM_SECTOR = 60
-        self.PC_ENTROPY_SCORE_LIMIT = 0.4
 
         self.PC_MIN_Z = -2.3
         self.PC_MAX_Z = 0.7
@@ -36,6 +35,8 @@ class ActiveLidar:
         # L2 parameters
         self.O3D_ACTOR = o3d.geometry.PointCloud()
         self.PARA_ALPHA = 1.5
+        self.PF_K = 100
+
 
         # OLD VERSION, NOT USED
         if self.Active:
@@ -236,6 +237,9 @@ class ActiveLidar:
         for label in np.unique(semantic_pt[valid_walker_labels][:, 4]):
             walker_points_dict[int(label)] = semantic_pt[valid_walker_labels & (semantic_pt[:, 4] == label)]
 
+        cxs_ = []
+        cys_ = []
+        lambdas_ = []
         for actor in filtered_actors + selected_walkers:
             bbox = actor.bounding_box
             actor_id = actor.id
@@ -256,22 +260,41 @@ class ActiveLidar:
             mesh_cnt = 0
 
             if dist < self.PC_MAX_RANGE:
+                cxs_.append(cx)
+                cys_.append(cy)
                 if actor_id in vehicle_points_dict:
                     actor_cnt += 10
                     self.O3D_ACTOR.points = o3d.utility.Vector3dVector(points_collection[:, :3])
                     mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(self.O3D_ACTOR, self.PARA_ALPHA)
-                    mesh_cnt = len(mesh.triangles)   
+                    mesh_cnt = len(mesh.triangles)
+                    if mesh_cnt > 2000:
+                        mesh_cnt = 2000  
+                    lambdas_.append(mesh_cnt) 
                 else:
                     actor_cnt += 3
+                    lambdas_.append(0)
             sx = 2 * bbox.extent.x
             sy = 2 * bbox.extent.y
             sz = 2 * bbox.extent.z
             yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
 
-            label_str = "{} {} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, mesh_cnt, time.time() - tick)
+            label_str = "{} {} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, mesh_cnt, dist)
             label_output.append(label_str)
+
+        cxs_ = np.array(cxs_)
+        cys_ = np.array(cys_)
+        lambdas_ = np.array(lambdas_)
+        lambdas_[lambdas_ == 0] = 1
+        pf_sc = self.PF_K / (cxs_**2 + cys_**2) * lambdas_
+        pf_tan = np.arctan2(cys_, cxs_)
+        pf_sc2 = pf_sc * np.exp(1j * pf_tan)
+        pf_sum = np.sum(pf_sc2)
+        pf_tan = np.angle(pf_sum)
+        pf_res = np.sum(pf_sc)
         
-        temp_str = "{} {} {} {} {} {}".format(actor_cnt,scan_entropy,bev_entropy,current_entropy_score, len(filtered_actors), len(selected_walkers))
+        temp_str = "{} {} {} {} {} {} {} {} {}".format(actor_cnt,scan_entropy,bev_entropy,current_entropy_score, 
+                                              len(filtered_actors), len(selected_walkers),
+                                              np.abs(pf_sum), pf_tan, pf_res)
         label_output.append(temp_str)
 
         return True, label_output, current_entropy_score

@@ -98,8 +98,12 @@ Thank you for your interest in contributing to this project! Contributions are h
 
 # Todo List
 
-- [ ]  Adapter for OpenPCDet
+- [x] L1 complexity design & code
 
-- [ ]  L2 complexity design
+- [x] L2 complexity design & code
 
-- [ ]  L4 complexity code 
+- [ ] L3 complexity design & code
+
+- [ ] L4 complexity design & code
+
+- [ ] Adapter for OpenPCDet

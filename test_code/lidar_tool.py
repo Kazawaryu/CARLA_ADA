@@ -197,10 +197,10 @@ def open3d_draw_picture(ground,nonground,dect_objects,corner_set):
         np.array([[1.0, 0.0, 0.0] for _ in range(len(dect_objects))])
     )
 
-    alpha = 1.5
-    tick = time.time()
-    mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(object_o3d, alpha)   
-    print("cost",time.time()-tick)
+    # alpha = 1.5
+    # tick = time.time()
+    # mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(object_o3d, alpha)   
+    # print("cost",time.time()-tick)
     
     
 

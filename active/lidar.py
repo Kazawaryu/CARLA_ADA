@@ -230,7 +230,7 @@ class ActiveLidar:
         #         #     actor_cnt += 2
 
         vehicle_points_dict = {}
-        walker_points_dict = {}
+        walker_points_dict = {}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
         label_output = []
 
         # 2. calculate mesh count
@@ -257,6 +257,7 @@ class ActiveLidar:
             cx = (max_p[0] + min_p[0]) / 2
             cy = (max_p[1] + min_p[1]) / 2
             cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
+            csize = (max_p[0] - min_p[0]) * (max_p[1] - min_p[1]) * (max_p[2] - min_p[2])
             dist = np.sqrt(cx**2 + cy**2)
             mesh_cnt = 0
 
@@ -280,7 +281,7 @@ class ActiveLidar:
             sz = 2 * bbox.extent.z
             yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
 
-            label_str = "{} {} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, mesh_cnt, dist)
+            label_str = "{} {} {} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, mesh_cnt, dist, csize)
             label_output.append(label_str)
 
         lambdas_ = np.array(lambdas_)

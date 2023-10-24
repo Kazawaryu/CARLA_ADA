@@ -18,8 +18,8 @@ def read_args():
 
 if __name__ == '__main__':
     # bin_path, label_path = read_args()
-    bin_path = '1024_1847'
-    label_path = '0000001467'
+    bin_path = '1024_1907'
+    label_path = '0000005021'
     # load point clouds
     scan_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+bin_path+'/vehicle.tesla.model3.master/velodyne/' + label_path + '.bin'
     try:

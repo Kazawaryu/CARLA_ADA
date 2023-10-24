@@ -103,8 +103,8 @@ def main():
 
 
 def rotz(t):
-    c = np.cos(np.deg2rad(t)-offset_degree)
-    s = np.sin(np.deg2rad(t)-offset_degree)
+    c = np.cos(t - offset_degree)
+    s = np.sin(t - offset_degree)
     return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
 
 
@@ -156,7 +156,7 @@ def load_pre_label(gt_json_path):
                     cx, cy, cz, sx, sy, sz, yaw, label = l[0], l[1],l[2], l[3],l[4], l[5],l[6], l[7]
                     box_data = list(map(float,[ cx, cy, cz, sx, sy, sz, yaw]))
                     pred_box.append(box_data)
-                    print("[label_str]",line)
+                    # print("[label_str]",line)
                 except:
                     print("[entropy infos]",line)
                 

@@ -248,12 +248,23 @@ class ActiveLidar:
             if actor_id in vehicle_points_dict:
                 points_collection = vehicle_points_dict[actor_id]
                 tag = self.Vehicle_tags[points_collection[0, 5]]
+                max_p = np.max(points_collection[:, :3], axis=0)
+                min_p = np.min(points_collection[:, :3], axis=0)
+                sx = 2 * bbox.extent.x
+                sy = 2 * bbox.extent.y
+                sz = 2 * bbox.extent.z
             else:
                 points_collection = walker_points_dict[actor_id]
                 tag = self.Walker_tags[points_collection[0, 5]]
 
-            max_p = np.max(points_collection[:, :3], axis=0)
-            min_p = np.min(points_collection[:, :3], axis=0)
+                max_p = np.max(points_collection[:, :3], axis=0)
+                min_p = np.min(points_collection[:, :3], axis=0)
+                sx = max_p[0] - min_p[0]
+                sy = max_p[1] - min_p[1]
+                sz = max_p[2] - min_p[2]
+                
+
+
             cx = (max_p[0] + min_p[0]) / 2
             cy = (max_p[1] + min_p[1]) / 2
             cz = (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
@@ -276,12 +287,14 @@ class ActiveLidar:
                     dist_.append(dist)
                 else:
                     actor_cnt += 3
-            sx = 2 * bbox.extent.x
-            sy = 2 * bbox.extent.y
-            sz = 2 * bbox.extent.z
-            yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw)
 
-            label_str = "{} {} {} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, mesh_cnt, dist, csize)
+            yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw) * np.pi / 180
+
+            # carla format: cx, cy, cz, sx, sy, sz, yaw, lab
+            # kitti format: -cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, lab
+
+            # label_str = "{} {} {} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, mesh_cnt, dist, csize)
+            label_str = "{} {} {} {} {} {} {} {} {} {} {}".format(-cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, tag, mesh_cnt, dist, csize)
             label_output.append(label_str)
 
         lambdas_ = np.array(lambdas_)

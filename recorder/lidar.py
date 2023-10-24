@@ -24,7 +24,7 @@ class Lidar(Sensor):
             lidar_data, (int(lidar_data.shape[0] / 4), 4))
 
         # Convert point cloud to right-hand coordinate system
-        # lidar_data[:, 1] *= -1
+        lidar_data[:, 1] *= -1
 
         with open("{}/{:0>10d}.bin".format(save_dir,sensor_data.frame), 'wb') as file:
             file.write(lidar_data)
@@ -53,7 +53,7 @@ class SemanticLidar(Sensor):
                                    ]))
 
         # Convert point cloud to right-hand coordinate system
-        # lidar_data['y'] *= -1
+        lidar_data['y'] *= -1
         
         ret, labels, score = self.active_lidar.one_loop_cal_all_active_new(lidar_data)
         with open("{}/{:0>10d}.bin".format(save_dir,sensor_data.frame), 'wb') as file:

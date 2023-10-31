@@ -28,6 +28,8 @@ class Lidar(Sensor):
 
         with open("{}/{:0>10d}.bin".format(save_dir,sensor_data.frame), 'wb') as file:
             file.write(lidar_data)
+
+        # np.save("{}/{:0>10d}".format(save_dir,sensor_data.frame),lidar_data)
         return True
 
 

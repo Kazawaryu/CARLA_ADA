@@ -29,24 +29,30 @@ def split_lidar(source_dir, set_dir ,bin_dir, txt_dir):
             with open(os.path.join(txt_listdir,filename), 'r') as f:
                 lines = f.readlines()
                 lines = lines[:-1]
-                lines = [line.split(' ') for line in lines]
-                lines = [[line[0], line[1], line[2], line[3], line[4], line[5], line[6], line[7]] for line in lines]
-                lines = [' '.join(line) for line in lines]
-                lines = [line+'\n' for line in lines]
-            # 对于修改后的txt文件，存储到新的文件夹中
+                fix_lines = ""
+
+                for line in lines:
+                    elements = line.split(" ")
+                    # x, y, z, l, w, h, rot, lab, _, _, _ = elements
+                    x, y, z, dx, dy, dz, rot, lab, _, _, _ = elements
+                    rot = float(rot)
+                    rot -= 3.14 if rot > 3.14 else 0
+                # if lab != 'Bus':
+                    # fix_line = "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n".format(lab, '0', '0', '0', '0', '0', '0', '0', h, w, l, x, y, z, rot)
+                    # fix_line = "{} {} {} {} {} {} {} {}\n".format(x,y,z,l,w,h,rot,lab)
+                    fix_line = "{} {} {} {} {} {} {} {}\n".format(x,y,z,dx,dy,dz,rot,lab)
+                    fix_lines += fix_line
+
             with open(os.path.join(txt_dir, txt_listdir.split('/')[2]+"_"+filename), 'w') as f:
-                f.writelines(lines) 
-            # 复制bin文件到新的文件夹中
+                f.writelines(fix_lines) 
             shutil.copy(os.path.join(bin_listdir,filename.replace('.txt','.bin')), os.path.join(bin_dir, bin_listdir.split('/')[2]+"_"+filename.replace('.txt','.bin')))
 
         if file_cnt % 12 == 0:
             print("Now processing: ", file_cnt, " files")
 
-            # shutil.copy(os.path.join(txt_listdir,filename), os.path.join(txt_dir, txt_listdir.split('/')[2]+"_"+filename))
-            # shutil.copy(os.path.join(pyn_listdir,filename.replace('.txt','.bin')), os.path.join(pyn_dir, pyn_listdir.split('/')[2]+"_"+filename.replace('.txt','.bin')))
-            
-    
     return file_cnt
+
+
 
 
 if __name__ == "__main__":

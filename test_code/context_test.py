@@ -60,6 +60,7 @@ if __name__ == "__main__":
     scan_entropy = []
     bev_entropy = []
     current_entropy_score = []
+    pf_score = []
 
     vehicle_0_2 = []
     vehicle_2_4 = []
@@ -77,12 +78,20 @@ if __name__ == "__main__":
             scan_entropy.append(float(data[1]))
             bev_entropy.append(float(data[2]))
             current_entropy_score.append(float(data[3]))
+            pf_score.append(float(data[-1]))
             idx += 1
 
     # save data to csv file
     with open(source+"../filt.csv", "w") as file:
-        file.write("x,y,z,x**2,y**2,x/y,x*y\n")
+        file.write("x,y,z,x**2,y**2,x/y,x*y,s2\n")
         for i in range(len(x_axis)):
-            file.write("{},{},{},{},{},{},{}\n".format(scan_entropy[i], bev_entropy[i], temp_vehicle_cnt[i],scan_entropy[i]**2, bev_entropy[i]**2, current_entropy_score[i], scan_entropy[i]*bev_entropy[i]))
+            file.write("{},{},{},{},{},{},{},{}\n".format(scan_entropy[i], 
+                                                          bev_entropy[i], 
+                                                          temp_vehicle_cnt[i],
+                                                          scan_entropy[i]**2, 
+                                                          bev_entropy[i]**2, 
+                                                          current_entropy_score[i], 
+                                                          scan_entropy[i]*bev_entropy[i],
+                                                          pf_score[i]))
 
     make_linear_func(source+"../filt.csv")

@@ -23,8 +23,8 @@ def read_args():
 
 if __name__ == '__main__':
   # bin_path, label_path = read_args()
-  bin_path = '1024_1907'
-  label_path = '0000005360'
+  bin_path = '1026_2037'
+  label_path = '0000008601'
 
   img_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+bin_path+'/vehicle.tesla.model3.master/image_2/' + label_path + '.png'
   label_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+bin_path+'/vehicle.tesla.model3.master/velodyne_semantic/' + label_path + '.txt'
@@ -36,12 +36,7 @@ if __name__ == '__main__':
   with open(label_dir, 'r') as f:
       labels = f.readlines()
   labels = labels[:-1]
-
-  # # load calibration file
-  # with open(f'examples/kitti/calib/{file_id}.txt', 'r') as f:
-  #   lines = f.readlines()
-  #   P2 = np.array(lines[2].strip().split(' ')[1:], dtype=np.float32).reshape(3, 4)
-
+  
   P2 = np.array([[736.9,0,691,0],
                 [0,736.9,256,-300],
                 [0,0,1,0]])
@@ -80,29 +75,29 @@ if __name__ == '__main__':
       square = cv2.minAreaRect(corners_img.astype(np.float32))
       square = cv2.boxPoints(square)
       # draw the 2d bbox
-      line(square[0], square[1], 0)
-      line(square[1], square[2])
-      line(square[2], square[3])
-      line(square[3], square[0])
+      # line(square[0], square[1], 0)
+      # line(square[1], square[2])
+      # line(square[2], square[3])
+      # line(square[3], square[0])
 
 
-      # # draw the upper 4 horizontal lines
-      # line(corners_img[0], corners_img[1], 0)  # front = 0 for the front lines
-      # line(corners_img[1], corners_img[2])
-      # line(corners_img[2], corners_img[3])
-      # line(corners_img[3], corners_img[0])
+      # draw the upper 4 horizontal lines
+      line(corners_img[0], corners_img[1], 0)  # front = 0 for the front lines
+      line(corners_img[1], corners_img[2])
+      line(corners_img[2], corners_img[3])
+      line(corners_img[3], corners_img[0])
 
-      # # draw the lower 4 horizontal lines
-      # line(corners_img[4], corners_img[5], 0)
-      # line(corners_img[5], corners_img[6])
-      # line(corners_img[6], corners_img[7])
-      # line(corners_img[7], corners_img[4])
+      # draw the lower 4 horizontal lines
+      line(corners_img[4], corners_img[5], 0)
+      line(corners_img[5], corners_img[6])
+      line(corners_img[6], corners_img[7])
+      line(corners_img[7], corners_img[4])
 
-      # # draw the 4 vertical lines
-      # line(corners_img[4], corners_img[0], 0)
-      # line(corners_img[5], corners_img[1], 0)
-      # line(corners_img[6], corners_img[2])
-      # line(corners_img[7], corners_img[3])
+      # draw the 4 vertical lines
+      line(corners_img[4], corners_img[0], 0)
+      line(corners_img[5], corners_img[1], 0)
+      line(corners_img[6], corners_img[2])
+      line(corners_img[7], corners_img[3])
 
   # fig.patch.set_visible(False)
   plt.axis('off')

@@ -16,7 +16,7 @@ class ActiveLidar:
 
     def set_parameters(self):
         self.Walker_tags = {12:"Pedestrian",13:"Rider"}
-        self.Vehicle_tags ={14:"Car",15:"Truck",16:"Bus"}
+        self.Vehicle_tags ={14:"Car",15:"Truck",16:"Van"}
         self.Cyclist_tags = {18:"Motorcycle",19:"Bicycle"}
         self.Active = True
         self.Largest_label_range = 100       # object labeling range, max 100
@@ -262,8 +262,6 @@ class ActiveLidar:
                 sx = max_p[0] - min_p[0]
                 sy = max_p[1] - min_p[1]
                 sz = max_p[2] - min_p[2]
-                
-
 
             cx = (max_p[0] + min_p[0]) / 2
             cy = (max_p[1] + min_p[1]) / 2
@@ -293,9 +291,10 @@ class ActiveLidar:
             # carla format: cx, cy, cz, sx, sy, sz, yaw, lab
             # kitti format: -cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, lab
 
-            # label_str = "{} {} {} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, mesh_cnt, dist, csize)
+            #label_str = "{} {} {} {} {} {} {} {} {} {} {}".format(cx, cy, cz, sx, sy, sz, yaw, tag, mesh_cnt, dist, csize)
             label_str = "{} {} {} {} {} {} {} {} {} {} {}".format(-cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, tag, mesh_cnt, dist, csize)
             label_output.append(label_str)
+
 
         lambdas_ = np.array(lambdas_)
         dist_ = np.array(dist_)

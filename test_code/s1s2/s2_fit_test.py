@@ -63,21 +63,26 @@ truck_df['dist'] = truck_df['dist'].astype(float)
 
 car_df_filtered = car_df[(car_df['dist'] > 0) & (car_df['dist'] <= 60)]
 truck_df_filtered = truck_df[(truck_df['dist'] > 0) & (truck_df['dist'] <= 60)]
+bus_df_filtered = bus_df[(bus_df['dist'] > 0) & (bus_df['dist'] <= 60)]
 
 x = car_df_filtered['dist'] / 60
-yc = (car_df_filtered['dist']**2 * (car_df_filtered['mesh_cnt'])) /(1e6*(x * np.log(x) + 0.5))
+yc = 1*(car_df_filtered['dist']**2 * (car_df_filtered['mesh_cnt']) 
+    /np.sqrt(car_df_filtered['sx'] * car_df_filtered['sy'] * car_df_filtered['sz'])) /(1e6*(x * np.log(x) + 0.5))
 x = truck_df_filtered['dist'] / 60
-yt = (truck_df_filtered['dist']**2 * (truck_df_filtered['mesh_cnt'])) /(1e6*(x * np.log(x) + 0.5))
+yt = 0.7*(truck_df_filtered['dist']**2 * (truck_df_filtered['mesh_cnt'])
+    /np.sqrt(truck_df_filtered['sx'] * truck_df_filtered['sy'] * truck_df_filtered['sz'])) /(1e6*(x * np.log(x) + 0.5))
+x = bus_df_filtered['dist'] / 60
+yb = 0.9*(bus_df_filtered['dist']**2 * (bus_df_filtered['mesh_cnt'])
+    /np.sqrt(bus_df_filtered['sx'] * bus_df_filtered['sy'] * bus_df_filtered['sz'])) /(1e6*(x * np.log(x) + 0.5))
 
-yc[yc > 4.5] = 4.5
-yt[yt > 4.5] = 4.5
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.scatter(car_df_filtered['mesh_cnt'], car_df_filtered['dist'], yc, c='r', label='Car')
-ax.scatter(truck_df_filtered['mesh_cnt'], truck_df_filtered['dist'], yt, c='b', label='Truck')
-ax.set_xlabel('mesh_cnt')
-ax.set_ylabel('dist')
+ax.scatter(car_df_filtered['dist'],car_df_filtered['mesh_cnt'], yc, c='r', label='Car')
+ax.scatter(truck_df_filtered['dist'],truck_df_filtered['mesh_cnt'], yt, c='b', label='Truck')
+ax.scatter(bus_df_filtered['dist'],bus_df_filtered['mesh_cnt'], yb, c='g', label='Bus')
+ax.set_xlabel('dist')
+ax.set_ylabel('mesh_cnt')
 ax.set_zlabel('s2 score')
-ax.set_title('s2 score - mesh_cnt - dist')
+ax.set_title('s2 score - mesh_cnt - mesh_cnt')
 plt.show()

@@ -33,6 +33,7 @@ class ActiveLidar:
         self.PC_MAX_Z = 0.7
 
         # L2 parameters
+        self.PF_M ={14:1.0,15:0.7,16:1.1}
         self.O3D_ACTOR = o3d.geometry.PointCloud()
         self.PARA_ALPHA = 1.5
         self.PF_K = 1e6
@@ -104,7 +105,7 @@ class ActiveLidar:
 
         return True, labels, 100
         
-    def scene_entropy(self,desc,pcd):
+    def scene_entropy(self,desc, pcd):
         max_pcd = np.max(pcd,axis=0)
         min_pcd = np.min(pcd,axis=0)
         vt = len(pcd) / (max_pcd[0]-min_pcd[0])*(max_pcd[1]-min_pcd[1])*(max_pcd[2]-min_pcd[2])
@@ -241,6 +242,9 @@ class ActiveLidar:
 
         dist_ = []
         lambdas_ = []
+        csize_ = []
+        pf_y_ = []
+        pf_x_ = []
         for actor in filtered_actors + selected_walkers:
             bbox = actor.bounding_box
             actor_id = actor.id
@@ -273,7 +277,7 @@ class ActiveLidar:
             if dist < self.PC_MAX_RANGE:
                 if actor_id in vehicle_points_dict:
                     actor_cnt += 10
-                    if dist > self.PF_MIN_RANGE and points_collection[0, 5]!=16:
+                    if dist > self.PF_MIN_RANGE:
                         self.O3D_ACTOR.points = o3d.utility.Vector3dVector(points_collection[:, :3])
                         mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(self.O3D_ACTOR, self.PARA_ALPHA)
                         mesh_cnt = len(np.asarray(mesh.triangles))
@@ -281,10 +285,14 @@ class ActiveLidar:
                             mesh_cnt = 2000
                     else:
                         mesh_cnt = 2000
+                    mesh_cnt *= self.PF_M[points_collection[0, 5]]
                     lambdas_.append(mesh_cnt)
-                    dist_.append(dist)
+                    dist_.append(np.float64(dist))
+                    csize_.append(np.float64(csize))
+                    pf_x_.append(cx)
+                    pf_y_.append(cy)
                 else:
-                    actor_cnt += 3
+                    actor_cnt += 1
 
             yaw = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw) * np.pi / 180
 
@@ -298,12 +306,14 @@ class ActiveLidar:
 
         lambdas_ = np.array(lambdas_)
         dist_ = np.array(dist_)
+        csize_ = np.array(csize_)
         pf_l = dist_ / self.PF_MAX_RANGE
-        pf_score = (dist**2 * lambdas_) / (self.PF_K * (pf_l * np.log(pf_l) + 0.5))
-        pf_score[pf_score > 4.5] = 4.5
-        temp_str = "{} {} {} {} {} {} {}".format(actor_cnt,scan_entropy,bev_entropy,current_entropy_score, 
-                                              len(filtered_actors), len(selected_walkers),
-                                              pf_score.sum())
+        
+        pf_scalar = ((dist**2 * lambdas_) /csize_) / (self.PF_K * (pf_l * np.log(pf_l) + 0.5))
+        pf_vector = np.array([pf_scalar * np.cos(np.arctan2(pf_y_, pf_x_)), pf_scalar * np.sin(np.arctan2(pf_y_, pf_x_))])
+        temp_str = "{} {} {} {} {}".format(actor_cnt,scan_entropy,bev_entropy,
+                                              np.sum(pf_scalar),np.arctan2(np.sum(pf_vector[1]), np.sum(pf_vector[0])))
+        
         label_output.append(temp_str)
 
         return True, label_output, current_entropy_score

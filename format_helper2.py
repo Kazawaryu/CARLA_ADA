@@ -1,7 +1,7 @@
 import os
 import shutil
 import argparse
-
+import tqdm
 
 
 def read_main_path():
@@ -30,9 +30,10 @@ def get_inner_frame(main_path, test_spilt, val_spilt):
     for entry in os.scandir(main_path):
         if entry.is_dir() and entry.name.startswith("vehicle"):
             source_paths.append(main_path+'/'+entry.name)
-    
-    train_set = set()
 
+    train_set = set()
+    test_set = set()
+    val_set = set()
     for source_path in source_paths:
         lidar_path = source_path+'/velodyne'
         image_path = source_path+'/image_2'
@@ -53,8 +54,6 @@ def get_inner_frame(main_path, test_spilt, val_spilt):
 
         train_set = train_set | (lidar_set & image_set & label_set)
 
-        test_set = set()
-        val_set = set()
         for i in range(len(train_set)//test_spilt):
             test_set.add(train_set.pop())
         for i in range(len(train_set)//val_spilt):
@@ -68,7 +67,7 @@ def copy_lidar2(main_path, train_set, test_set, val_set):
     for entry in os.scandir(main_path):
         if entry.is_dir() and entry.name.startswith("vehicle"):
             source_paths.append(main_path+'/'+entry.name+'/velodyne')
-
+    
     for key in target_path:
         os.makedirs(target_path[key], exist_ok=True)
 
@@ -137,17 +136,20 @@ def copy_label2(main_path, train_set, test_set, val_set):
                     fix_lines = ""
                     for line in lines:
                         elements = line.split(" ")
-                        x, y, z, l, w, h, rot, lab, _, _, _ = elements
+                        # print('This is the test version, when fix the recorder, update here')
+                        # x, y, z, l, w, h, rot, lab, _, _, _ = elements
+                        x, y, z, l, w, h, rot, lab, _ = elements
+                        l = abs(round(float(l),4))
+                        w = abs(round(float(w),4))
+                        h = abs(round(float(h),4))
                         x = round(float(x),4)
                         y = round(float(y),4)
                         z = round(float(z),4)
-                        l = round(float(l),4)
-                        w = round(float(w),4)
-                        h = round(float(h),4)
                         rot = round(float(rot),4)
-                        if lab == 'Bus': lab = 'Van'
+                        # if lab == 'Bus': lab = 'Van'
                         # x, y, z, dx, dy, dz, rot, lab, _, _, _ = elements
                         rot -= 3.14 if rot > 3.14 else 0
+                        rot = round(float(rot),4)
                         fix_line = "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n".format(lab, '0', '0', '0', '0', '0', '0', '0', h, w, l, x, y, z, rot)
                         # fix_line = "{} {} {} {} {} {} {} {}\n".format(x,y,z,dx,dy,dz,rot,lab)
                         fix_lines += fix_line
@@ -190,10 +192,15 @@ if __name__ == "__main__":
     os.makedirs('dataset', exist_ok=True)
     main_path = read_main_path()
     train_set, test_set, val_set = get_inner_frame(main_path, 12, 15)
+    print('Set preparation done')
     # print("train_set: ", train_set)
 
     copy_lidar2(main_path, train_set, test_set, val_set)
+    print('Lidar copy done')
     copy_image2(main_path, train_set, test_set, val_set)
+    print('Image copy done')
     copy_label2(main_path, train_set, test_set, val_set)
+    print('Label copy done')
     generate_imagesets(main_path, train_set, test_set, val_set)
+    print('Imagesets generate done')
     copy_calib2()

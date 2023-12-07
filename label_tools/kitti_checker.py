@@ -4,7 +4,7 @@ import mayavi.mlab as mlab
 import argparse
 
 colors = sns.color_palette('Paired', 9 * 2)
-names = ['Car', 'Bus', 'Truck', 'Pedestrian', 'Person_sitting', 'Cyclist', 'Tram', 'Misc', 'DontCare']
+names = ['Car', 'Bus', 'Truck', 'Pedestrian', 'Rider', 'Cyclist', 'Van', 'Misc', 'DontCare']
 
 def read_args():
     parser = argparse.ArgumentParser(description='Plot 3D bounding box')
@@ -17,17 +17,19 @@ def read_args():
     return bin_path, label_path
 
 if __name__ == '__main__':
-    # bin_path, label_path = read_args()
-    bin_path = '1026_2037'
-    label_path = '0000008601'
+    bin_path, label_path = read_args()
+    # bin_path = '1026_2037'
+    # label_path = '0000008601'
     # load point clouds
     scan_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+bin_path+'/vehicle.tesla.model3.master/velodyne/' + label_path + '.bin'
+    #scan_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/dataset/testing/velodyne/008571.bin'
     try:
         scan = np.fromfile(scan_dir, dtype=np.float32).reshape(-1, 4)
     except:
         scan = np.fromfile(scan_dir, dtype=np.float32).reshape(-1, 6)
     # load labels
     label_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+bin_path+'/vehicle.tesla.model3.master/velodyne_semantic/' + label_path + '.txt'
+    #label_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/dataset/testing/label_2/008571.txt'
     with open(label_dir, 'r') as f:
         labels = f.readlines()
     labels = labels[:-1]
@@ -38,10 +40,11 @@ if __name__ == '__main__':
 
     for line in labels:
         line = line.split()
-        x, y, z, l, w, h, rot, lab, _, _, _ = line
-        # lab, _, _, _, _, _, _, _, h, w, l, x, y, z, rot = line
+        try:
+            x, y, z, l, w, h, rot, lab, _ = line
+        except:
+            lab, _, _, _, _, _, _, _, h, w, l, x, y, z, rot = line
         h, w, l, x, y, z, rot = map(float, [h, w, l, x, y, z, rot])
-        
         if lab != 'DontCare':
             x_corners = [l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2]
             y_corners = [0, 0, 0, 0, -h, -h, -h, -h]

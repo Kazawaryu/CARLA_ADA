@@ -74,7 +74,8 @@ def get_object_corner(objects_dict,last_dist_dict,fitter):
             if pre_distance < 100:
                 p_2d = np.array(object_points)[:,:2]
                 if True:
-                    corner_point = fitter.get_rectangle(p_2d,label).calc_rect_contour()
+                    rect, yaw = filter.get_rectangle(p_2d,label)
+                    corner_point = rect.calc_rect_contour()
                     corners = np.array([[corner_point[0][0], corner_point[1][0], min_z],
                                     [corner_point[0][0], corner_point[1][0], max_z],
                                     [corner_point[0][1], corner_point[1][1], min_z],

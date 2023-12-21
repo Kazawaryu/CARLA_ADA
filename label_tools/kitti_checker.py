@@ -18,8 +18,8 @@ def read_args():
 
 if __name__ == '__main__':
     bin_path, label_path = read_args()
-    # bin_path = '1026_2037'
-    # label_path = '0000008601'
+    # bin_path = '1130_1431'
+    # label_path = '0000002983'
     # load point clouds
     scan_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+bin_path+'/vehicle.tesla.model3.master/velodyne/' + label_path + '.bin'
     #scan_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/dataset/testing/velodyne/008571.bin'
@@ -41,10 +41,11 @@ if __name__ == '__main__':
     for line in labels:
         line = line.split()
         try:
-            x, y, z, l, w, h, rot, lab, _ = line
+            x, y, z, l, w, h, rot, lab, _, _ = line
         except:
             lab, _, _, _, _, _, _, _, h, w, l, x, y, z, rot = line
         h, w, l, x, y, z, rot = map(float, [h, w, l, x, y, z, rot])
+        print(lab, x, y, z, l, w, h, rot)
         if lab != 'DontCare':
             x_corners = [l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2]
             y_corners = [0, 0, 0, 0, -h, -h, -h, -h]

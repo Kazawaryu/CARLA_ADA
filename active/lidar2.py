@@ -1,6 +1,7 @@
 import time
 import open3d as o3d
 import numpy as np
+import active.util as util
 
 class ActiveLidar:
     def __init__(self,world,sensor) -> None:
@@ -139,7 +140,7 @@ class ActiveLidar:
             # custom format: cx, cy, cz, sx, sy, sz, yaw, lab, mes
             # label_ = [cx_, cy_, cz_, sx_, sy_, sz_, yaw_, tag_, mes_]
             # kitti format: -cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, lab, mes
-            label_ = [-cy_, -cz_-0.5*sz_, cx_, sy_, sx_, -sz_, yaw_, tag_, _mes]
+            label_ = [-cy_, -cz_+0.5*sz_, cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
             label_output.append(label_)
 
         for actor in walker_actors:    
@@ -153,7 +154,8 @@ class ActiveLidar:
             # custom format: cx, cy, cz, sx, sy, sz, yaw, lab, mes
             # label_ = [cx_, cy_, cz_, sx_, sy_, sz_, yaw_, tag_, mes_]
             # kitti format: -cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, lab, mes
-            label_ = [-cy_, -cz_-0.5*sz_, cx_, sy_, sx_, -sz_, yaw_, tag_, _mes]
+            # label_ = [-cy_, -cz_+0.5*sz_, cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
+            label_ = [-cy_, -cz_+sz_, cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
             label_output.append(label_)
 
         lambdas_, dists_, bsize_, degree_ = np.array(lambdas_), np.array(dists_), np.array(bsize_), np.array(degree_)
@@ -167,7 +169,7 @@ class ActiveLidar:
     def labels_to_string(self, s1_gt_, label_output, se, be, ps, pd):
         return_strs = []
         for label in label_output:
-            label_str = "{} {} {} {} {} {} {} {} {}".format(label[0], label[1], label[2], label[3], label[4], label[5], label[6], label[7], label[8])
+            label_str = "{} {} {} {} {} {} {} {} {} {}".format(label[0], label[1], label[2], label[3], label[4], label[5], label[6], label[7], label[8], label[9])
             return_strs.append(label_str)
         return_strs.append("{} {} {} {} {}".format(s1_gt_, se, be, ps, pd))
         return return_strs

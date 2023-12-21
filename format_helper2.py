@@ -138,7 +138,7 @@ def copy_label2(main_path, train_set, test_set, val_set):
                         elements = line.split(" ")
                         # print('This is the test version, when fix the recorder, update here')
                         # x, y, z, l, w, h, rot, lab, _, _, _ = elements
-                        x, y, z, l, w, h, rot, lab, _ = elements
+                        x, y, z, l, w, h, rot, lab, _, _ = elements
                         l = abs(round(float(l),4))
                         w = abs(round(float(w),4))
                         h = abs(round(float(h),4))

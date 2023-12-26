@@ -104,7 +104,7 @@ class ActiveLidar:
             walker_points[int(label)] = valid_walker_points[valid_walker_points[:, 4] == label]
         walker_actors = [actor for actor in actor_list if actor.id in walker_points.keys()]
 
-        carla_actor_transform = self.carla_actor.get_transform().location
+        carla_actor_location = self.carla_actor.get_transform().location
         carla_actor_rotation_yaw = self.carla_actor.get_transform().rotation.yaw
 
         lambdas_, dists_, bsize_, degree_ = [], [], [], []
@@ -113,8 +113,12 @@ class ActiveLidar:
             bbox = actor.bounding_box 
             # max_p = np.max(vehicle_points[actor.id][:,:3],axis=0)
             # min_p = np.min(vehicle_points[actor.id][:,:3],axis=0)
-            object_position = actor.get_transform().location - carla_actor_transform + bbox.location
-            cx_, cy_, cz_ = object_position.x, object_position.y, object_position.z
+            
+            
+            # object_position = actor.get_transform().location - carla_actor_location + bbox.location
+            object_position = actor.get_transform().location - carla_actor_location
+        
+            cx_, cy_, cz_ = object_position.x, object_position.y, (actor.get_transform().location.z - carla_actor_location.z + bbox.location.z)
             sx_, sy_, sz_ = 2*bbox.extent.x, 2*bbox.extent.y, 2*bbox.extent.z       
             # cx_ , cy_ , cz_ = (max_p[0]+min_p[0])/2, (max_p[1]+min_p[1])/2, (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
             yaw_ = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw) * np.pi / 180
@@ -153,8 +157,10 @@ class ActiveLidar:
             # min_p = np.min(walker_points[actor.id][:,:3],axis=0)
 
             bbox = actor.bounding_box
-            object_position = actor.get_transform().location - carla_actor_transform + bbox.location
-            cx_, cy_, cz_ = object_position.x, object_position.y, object_position.z
+            # object_position = actor.get_transform().location - carla_actor_location + bbox.location
+            object_position = actor.get_transform().location - carla_actor_location
+            
+            cx_, cy_, cz_ = object_position.x, object_position.y, (actor.get_transform().location.z - carla_actor_location.z + bbox.location.z)
             sx_, sy_, sz_ = 2*bbox.extent.x, 2*bbox.extent.y, 2*bbox.extent.z   
 
 

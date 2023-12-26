@@ -29,6 +29,7 @@ class ActiveLidar:
         self.PF_K = 1.0
         self.PF_D = 1E5
         self.PF_H = 0.5
+        self.RET_TOOL = util.LShapeFitting()
 
     def get_S1_score(self,semantic_pt):
         # 1. make scan and bev desc
@@ -109,13 +110,17 @@ class ActiveLidar:
         lambdas_, dists_, bsize_, degree_ = [], [], [], []
         s1_gt_ = 0.
         for actor in vehicle_actors:
-            bbox = actor.bounding_box
-            sx_, sy_, sz_ = 2*bbox.extent.x, 2*bbox.extent.y, 2*bbox.extent.z        
-            max_p = np.max(vehicle_points[actor.id][:,:3],axis=0)
-            min_p = np.min(vehicle_points[actor.id][:,:3],axis=0)
-            cx_ , cy_ , cz_ = (max_p[0]+min_p[0])/2, (max_p[1]+min_p[1])/2, (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
+            bbox = actor.bounding_box 
+            # max_p = np.max(vehicle_points[actor.id][:,:3],axis=0)
+            # min_p = np.min(vehicle_points[actor.id][:,:3],axis=0)
+            object_position = actor.get_transform().location - carla_actor_transform + bbox.location
+            cx_, cy_, cz_ = object_position.x, object_position.y, object_position.z
+            sx_, sy_, sz_ = 2*bbox.extent.x, 2*bbox.extent.y, 2*bbox.extent.z       
+            # cx_ , cy_ , cz_ = (max_p[0]+min_p[0])/2, (max_p[1]+min_p[1])/2, (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
             yaw_ = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw) * np.pi / 180
             tag_ = self.Vehicle_tags[vehicle_points[actor.id][0][5]]
+
+
             
             _dist = np.sqrt(cx_**2 + cy_**2 + cz_**2)
             if _dist < self.PF_MAX_RANGE: s1_gt_ += 1.
@@ -140,14 +145,22 @@ class ActiveLidar:
             # custom format: cx, cy, cz, sx, sy, sz, yaw, lab, mes
             # label_ = [cx_, cy_, cz_, sx_, sy_, sz_, yaw_, tag_, mes_]
             # kitti format: -cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, lab, mes
-            label_ = [-cy_, -cz_+0.5*sz_, cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
+            label_ = [-cy_, -cz_+0.5*sz_, -cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
             label_output.append(label_)
 
         for actor in walker_actors:    
-            max_p = np.max(walker_points[actor.id][:,:3],axis=0)
-            min_p = np.min(walker_points[actor.id][:,:3],axis=0)
-            sx_, sy_, sz_ = max_p[0]-min_p[0], max_p[1]-min_p[1], max_p[2]-min_p[2]
-            cx_ , cy_ , cz_ = (max_p[0]+min_p[0])/2, (max_p[1]+min_p[1])/2, (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
+            # max_p = np.max(walker_points[actor.id][:,:3],axis=0)
+            # min_p = np.min(walker_points[actor.id][:,:3],axis=0)
+
+            bbox = actor.bounding_box
+            object_position = actor.get_transform().location - carla_actor_transform + bbox.location
+            cx_, cy_, cz_ = object_position.x, object_position.y, object_position.z
+            sx_, sy_, sz_ = 2*bbox.extent.x, 2*bbox.extent.y, 2*bbox.extent.z   
+
+
+
+            # sx_, sy_, sz_ = max_p[0]-min_p[0], max_p[1]-min_p[1], max_p[2]-min_p[2]
+            # cx_ , cy_ , cz_ = (max_p[0]+min_p[0])/2, (max_p[1]+min_p[1])/2, (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
             yaw_ = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw) * np.pi / 180
             tag_ = self.Walker_tags[walker_points[actor.id][0][5]]
             _mes = 0
@@ -155,7 +168,7 @@ class ActiveLidar:
             # label_ = [cx_, cy_, cz_, sx_, sy_, sz_, yaw_, tag_, mes_]
             # kitti format: -cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, lab, mes
             # label_ = [-cy_, -cz_+0.5*sz_, cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
-            label_ = [-cy_, -cz_+sz_, cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
+            label_ = [-cy_, -cz_+sz_, -cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
             label_output.append(label_)
 
         lambdas_, dists_, bsize_, degree_ = np.array(lambdas_), np.array(dists_), np.array(bsize_), np.array(degree_)

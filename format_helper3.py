@@ -235,6 +235,21 @@ def generate_imagesets(main_path, train_set, test_set, val_set):
     return True
 
 
+def read_dataset_dir():
+    set_label = ['50-25','75-37','100-50','125-67','150-75']
+    set_A_05 = ['1221_2116', '1223_1633', '1221_1951', '1223_1618', '1222_1620']
+    set_B_01 = ['1223_1749', '1223_1805', '1223_1819', '1223_1836', '1223_1915']
+    set_D_06 = ['1225_1955', '1225_2009', '1225_2024', '1225_2040', 'None']
+    
+    for i in range(len(set_label)):
+        subset = set_A_05[i]
+        dir_path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+subset
+        print('Set: ', set_label[i], ' = ', subset)
+
+
+
+    return
+
 
 
 if __name__ == "__main__":

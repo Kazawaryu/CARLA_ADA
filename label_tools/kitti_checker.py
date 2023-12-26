@@ -46,6 +46,13 @@ if __name__ == '__main__':
             lab, _, _, _, _, _, _, _, h, w, l, x, y, z, rot = line
         h, w, l, x, y, z, rot = map(float, [h, w, l, x, y, z, rot])
         print(lab, x, y, z, l, w, h, rot)
+
+        # sensor_yaw = 180
+        # sensor_rot_maxtrix_2d = np.array([[np.cos(np.deg2rad(sensor_yaw)), -np.sin(np.deg2rad(sensor_yaw))],
+        #                                 [np.sin(np.deg2rad(sensor_yaw)), np.cos(np.deg2rad(sensor_yaw))]])
+        
+        # [x, z] = np.dot(sensor_rot_maxtrix_2d, np.array([x, z]))
+
         if lab != 'DontCare':
             x_corners = [l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2]
             y_corners = [0, 0, 0, 0, -h, -h, -h, -h]

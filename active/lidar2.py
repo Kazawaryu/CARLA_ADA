@@ -163,8 +163,6 @@ class ActiveLidar:
             cx_, cy_, cz_ = object_position.x, object_position.y, (actor.get_transform().location.z - carla_actor_location.z + bbox.location.z)
             sx_, sy_, sz_ = 2*bbox.extent.x, 2*bbox.extent.y, 2*bbox.extent.z   
 
-
-
             # sx_, sy_, sz_ = max_p[0]-min_p[0], max_p[1]-min_p[1], max_p[2]-min_p[2]
             # cx_ , cy_ , cz_ = (max_p[0]+min_p[0])/2, (max_p[1]+min_p[1])/2, (actor.get_transform().location.z - carla_actor_transform.z + bbox.location.z)
             yaw_ = (actor.get_transform().rotation.yaw - carla_actor_rotation_yaw + bbox.rotation.yaw) * np.pi / 180

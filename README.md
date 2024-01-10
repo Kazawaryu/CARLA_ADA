@@ -1,10 +1,14 @@
 # Active Data Acquisition in Autonomous Driving Simulation
 
-![](images/structure.png)
+![](images/S4.png)
 
 Data collection tools with active data acquisition algorithm implemented for CARLA Simulator.
 
 ## News
+
+**2024.1.10** Fix label tool and format helper, adapter for pcdet.
+
+**2023.12.20** Finish L2 and L4.
 
 **2023.9.16** Finish L1 and L3 part, at ``./label_tools/lidar_tool``.
 
@@ -98,12 +102,8 @@ Thank you for your interest in contributing to this project! Contributions are h
 
 # Todo List
 
-- [x] L1 complexity design & code
+- [x] Code and Rules
 
-- [x] L2 complexity design & code
+- [ ] Experiments, and parameters setting
 
-- [ ] L3 complexity design & code
-
-- [ ] L4 complexity design & code
-
-- [ ] Adapter for OpenPCDet
+- [ ] Paper work

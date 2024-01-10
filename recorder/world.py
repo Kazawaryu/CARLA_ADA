@@ -25,8 +25,7 @@ class WorldActor(PseudoActor):
 
         carla_actors = self.carla_world.get_actors()
         for carla_actor in carla_actors:
-            if carla_actor.type_id.startswith('vehicle') \
-                    or carla_actor.type_id.startswith('walker'):
+            if carla_actor.type_id.startswith('vehicle') or carla_actor.type_id.startswith('walker'):
                 transform = carla_transform_to_transform(carla_actor.get_transform())
                 bbox = carla_bbox_to_bbox(carla_actor.bounding_box)
                 if carla_actor.type_id.startswith('walker'):

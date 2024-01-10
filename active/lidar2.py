@@ -109,6 +109,10 @@ class ActiveLidar:
 
         lambdas_, dists_, bsize_, degree_ = [], [], [], []
         s1_gt_ = 0.
+
+        fix_yaw = np.deg2rad(180 - carla_actor_rotation_yaw)
+        fix_rot_matrix_2d = np.array([[np.cos(fix_yaw), -np.sin(fix_yaw)],
+                                    [np.sin(fix_yaw), np.cos(fix_yaw)]])
         for actor in vehicle_actors:
             bbox = actor.bounding_box 
             # max_p = np.max(vehicle_points[actor.id][:,:3],axis=0)
@@ -145,11 +149,13 @@ class ActiveLidar:
                 degree_.append(np.arctan2(cy_, cx_))
                 # s1_gt_ += 1
             else: _mes = 0
-          
+
+            [cx_, cy_] = np.dot(fix_rot_matrix_2d, np.array([-cx_, -cy_]))
             # custom format: cx, cy, cz, sx, sy, sz, yaw, lab, mes
             # label_ = [cx_, cy_, cz_, sx_, sy_, sz_, yaw_, tag_, mes_]
             # kitti format: -cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, lab, mes
-            label_ = [-cy_, -cz_+0.5*sz_, -cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
+            # label_ = [-cy_, -cz_+0.5*sz_, -cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
+            label_ = [cy_, -cz_+0.5*sz_, cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
             label_output.append(label_)
 
         for actor in walker_actors:    
@@ -172,7 +178,9 @@ class ActiveLidar:
             # label_ = [cx_, cy_, cz_, sx_, sy_, sz_, yaw_, tag_, mes_]
             # kitti format: -cy, -cz-0.5*sz, cx, sy, sx, -sz, yaw, lab, mes
             # label_ = [-cy_, -cz_+0.5*sz_, cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
-            label_ = [-cy_, -cz_+sz_, -cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
+            
+            cx_, cy_ = np.dot(fix_rot_matrix_2d, np.array([-cx_, -cy_]))
+            label_ = [cy_, -cz_+0.5*sz_, cx_, sy_, sx_, sz_, yaw_, tag_, _mes, actor.id]
             label_output.append(label_)
 
         lambdas_, dists_, bsize_, degree_ = np.array(lambdas_), np.array(dists_), np.array(bsize_), np.array(degree_)

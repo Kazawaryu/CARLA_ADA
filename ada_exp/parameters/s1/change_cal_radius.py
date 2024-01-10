@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 
 class exp_tool:
     def __init__(self):
+        ADA_Range = 40
+
+
         self.Walker_tags = {12:"Pedestrian",13:"Rider"}
         self.Vehicle_tags ={14:"Car",15:"Truck",16:"Van"}
         self.Cyclist_tags = {18:"Motorcycle",19:"Bicycle"}
@@ -12,9 +15,9 @@ class exp_tool:
         self.Largest_label_range = 100       # object labeling range, max 100
         # ===== newest version (11.28) parameters =====
         # S1 parameters
-        self.PC_MAX_RANGE = 70
-        self.PC_NUM_RING = 70
-        self.PC_NUM_SECTOR = 70
+        self.PC_MAX_RANGE = ADA_Range
+        self.PC_NUM_RING = ADA_Range
+        self.PC_NUM_SECTOR = ADA_Range
         self.PC_MIN_Z = -2.3
         self.PC_MAX_Z = 0.7
 
@@ -51,9 +54,12 @@ class exp_tool:
 
         # 2.2. build bev scan
         bev_max_indices = (pt_x_valid.astype(int), pt_y_valid.astype(int))
+        # the max x and max y should be less than self.PC_MAX_RANGE
+        bev_max_indices = (np.clip(bev_max_indices[0], 0, self.PC_MAX_RANGE - 1), np.clip(bev_max_indices[1], 0, self.PC_MAX_RANGE - 1))
         np.maximum.at(bev_max, bev_max_indices, pt_z_valid)
 
         bev_min_indices = (pt_x_valid.astype(int), pt_y_valid.astype(int))
+        bev_min_indices = (np.clip(bev_min_indices[0], 0, self.PC_MAX_RANGE - 1), np.clip(bev_min_indices[1], 0, self.PC_MAX_RANGE - 1))
         np.minimum.at(bev_min, bev_min_indices, pt_z_valid)
 
         bev_scan = np.subtract(bev_max, bev_min)
@@ -75,8 +81,10 @@ class exp_tool:
         return entropy
     
 set_label = ['50-25','75-37','100-50','125-67','150-75']
-set_A_05 = ['1226_1700', '1226_1713', '1226_1727', '1226_1741', '1226_1756']
-time_dirc_list = set_A_05
+set_A_05 = ['1226_2120', '1226_2132', '1226_2146', '1226_2200', '1226_2214']
+set_B_02 = ['0104_2223', '0104_2309', '0104_2328', '0104_2343', '0105_0013']
+set_D_06 = ['0104_1949', '0104_2002', '0104_2016', '0104_2032', '0104_2056']
+time_dirc_list = set_B_02
 labels_list = set_label
 
 label_valid = {'Car', 'Truck', 'Bus'}
@@ -87,16 +95,16 @@ exp_tool = exp_tool()
 
 for i in range(len(time_dirc_list)):
     time_dirc = time_dirc_list[i]
-    sem_pt_path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+time_dirc+'/vehicle.tesla.model3.master/velodyne_semantic/'
+    sem_pt_path = '/home/newDisk/tool/carla_dataset_tool/raw_data/record_2024_'+time_dirc+'/vehicle.tesla.model3.master/velodyne_semantic/'
     file_list = os.listdir(sem_pt_path)
     file_list = [f for f in file_list if f.endswith('.bin')]
     file_list.sort()
-
+    
     for file in file_list:
         sem_pt = np.fromfile(sem_pt_path+file, dtype=np.float32).reshape(-1, 6)
         
         scan_ep, bev_ep = exp_tool.get_S1_score(sem_pt)
-
+        gt = 0
         with open(sem_pt_path+file[:-4]+'.txt') as f:
             lines = f.readlines()
             last_line = lines[-1]
@@ -106,7 +114,7 @@ for i in range(len(time_dirc_list)):
                 x, y, z, l, w, h, rot, lab, _, _ = line
                 x, y, z, l, w, h, rot = map(float, [x, y, z, l, w, h, rot])
                 dist = np.sqrt(x**2+y**2+z**2)
-                gt = 0
+                
                 if dist < exp_tool.PC_MAX_RANGE:
                     gt += 1
 
@@ -116,7 +124,7 @@ for i in range(len(time_dirc_list)):
             pf_vector_list.append(scores[4].replace('\n',''))
             s1_gt.append(gt)
 
-        print(i ,file)
+        print(i ,file, gt)
 
 df = pd.DataFrame({'scan_entropy':scan_entropy_list, 'bev_entropy':bev_entropy_list, 'pf_scalar':pf_scalar_list, 'pf_vector':pf_vector_list, 's1_gt':s1_gt})
 df['scan_enp'] = scan_entropy_list
@@ -125,6 +133,7 @@ df['pf_scalar'] = pf_scalar_list
 df['pf_vector'] = pf_vector_list
 df['s1_gt'] = s1_gt
 
-save_path = './s1s2_score_A70.csv'
+# save_path = './s1s2_score_D50.csv'
+save_path = '/home/newDisk/tool/carla_dataset_tool/ada_exp/parameters/s1/s1s2_score_B40.csv'
 
 df.to_csv(save_path, index=False)

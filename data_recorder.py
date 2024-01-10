@@ -18,7 +18,7 @@ def signal_handler(signal, frame):
     global sig_interrupt
     sig_interrupt = True
 
-
+# "spawn_point": 73
 class DataRecorder:
     def __init__(self, args):
         self.host = args.host

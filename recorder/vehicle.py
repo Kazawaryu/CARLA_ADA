@@ -133,6 +133,12 @@ class Vehicle(Actor):
         count=0
         try:
             for npc in self.carla_world.get_actors().filter('*vehicle*'):
+                # # no firetruck, no european_hgv, no fusorosa for small map, else it would has traffic jam adn stuck
+                # if npc.type_id.endswith('firetruck') or npc.type_id.endswith('european_hgv') or npc.type_id.endswith('fusorosa'):
+                #     # delete the npc from the world
+                #     print("delete the npc from the world:", npc.type_id)
+                #     npc.destroy()
+                # elif npc.id != self.carla_actor.id:
                 if npc.id != self.carla_actor.id:
                     dist = npc.get_transform().location.distance(self.carla_actor.get_transform().location)
                     # Filter for the vehicles within 50m

@@ -57,7 +57,13 @@ def get_inner_frame(main_path, test_spilt, val_spilt):
             flag = True
         for filename in os.listdir(label_path):
             if filename.endswith('.txt'):
-                label_set.add(filename.replace('.txt',''))
+                with open(os.path.join(label_path,filename), 'r') as f:
+                    lines = f.readlines()
+                    if len(lines) == 1:
+                        print('[WARNING] No label in this frame, skip', filename)
+                        continue
+                    else:
+                        label_set.add(filename.replace('.txt',''))
 
         if flag:
             for filename in os.listdir(lidar_path):
@@ -74,7 +80,7 @@ def get_inner_frame(main_path, test_spilt, val_spilt):
 
     return train_set, test_set, val_set, flag
 
-def copy_lidar2(main_path, train_set, test_set, val_set):
+def copy_lidar2(main_path, train_set, test_set, val_set, idx):
     target_path = {'train': 'dataset/training/velodyne/', 'test': 'dataset/testing/velodyne/'}
     source_paths = []
     for entry in os.scandir(main_path):
@@ -90,15 +96,15 @@ def copy_lidar2(main_path, train_set, test_set, val_set):
             if file.endswith('.bin'):
                 frame = file.replace('.bin','')
                 if frame in train_set:
-                    shutil.copy(os.path.join(source_path,file), os.path.join(target_path['train'],file[-10:]))
+                    shutil.copy(os.path.join(source_path,file), os.path.join(target_path['train'],str(idx)+file[-9:]))
                 elif frame in test_set:
-                    shutil.copy(os.path.join(source_path,file), os.path.join(target_path['test'],file[-10:]))
+                    shutil.copy(os.path.join(source_path,file), os.path.join(target_path['test'],str(idx)+file[-9:]))
                 elif frame in val_set:
-                    shutil.copy(os.path.join(source_path,file), os.path.join(target_path['train'],file[-10:]))
+                    shutil.copy(os.path.join(source_path,file), os.path.join(target_path['train'],str(idx)+file[-9:]))
 
     return True
 
-def copy_image2(main_path, train_set, test_set, val_set, flag):
+def copy_image2(main_path, train_set, test_set, val_set, flag, idx):
     target_path = {'train': 'dataset/training/image_2/', 'test': 'dataset/testing/image_2/'}
     source_paths = []
 
@@ -117,18 +123,18 @@ def copy_image2(main_path, train_set, test_set, val_set, flag):
             os.makedirs(target_path[key], exist_ok=True)
 
 
-        image_copy_path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_1221_1951/vehicle.tesla.model3.master/image_2/0000147072.png'
+        image_copy_path = '/home/newDisk/tool/carla_dataset_tool/raw_data/record_2024_0104_1949/vehicle.tesla.model3.master/image_2/0000012836.png'
         # copy the image and rename it to frame name
         for source_path in source_paths:
             for file in os.listdir(source_path):
                 if file.endswith('.bin'):
                     frame = file.replace('.bin','')
                     if frame in train_set:
-                        shutil.copy(image_copy_path, os.path.join(target_path['train'],file[-10:-4]+'.png'))
+                        shutil.copy(image_copy_path, os.path.join(target_path['train'],str(idx)+file[-9:-4]+'.png'))
                     elif frame in test_set:
-                        shutil.copy(image_copy_path, os.path.join(target_path['test'],file[-10:-4]+'.png'))
+                        shutil.copy(image_copy_path, os.path.join(target_path['test'],str(idx)+file[-9:-4]+'.png'))
                     elif frame in val_set:
-                        shutil.copy(image_copy_path, os.path.join(target_path['train'],file[-10:-4]+'.png'))
+                        shutil.copy(image_copy_path, os.path.join(target_path['train'],str(idx)+file[-9:-4]+'.png'))
 
     else: 
         for entry in os.scandir(main_path):
@@ -144,15 +150,15 @@ def copy_image2(main_path, train_set, test_set, val_set, flag):
                 if file.endswith('.png'):
                     frame = file.replace('.png','')
                     if frame in train_set:
-                        shutil.copy(os.path.join(source_path,file), os.path.join(target_path['train'],file[-10:]))
+                        shutil.copy(os.path.join(source_path,file), os.path.join(target_path['train'],str(idx)+file[-9:]))
                     elif frame in test_set:
-                        shutil.copy(os.path.join(source_path,file), os.path.join(target_path['test'],file[-10:]))
+                        shutil.copy(os.path.join(source_path,file), os.path.join(target_path['test'],str(idx)+file[-9:]))
                     elif frame in val_set:
-                        shutil.copy(os.path.join(source_path,file), os.path.join(target_path['train'],file[-10:]))
+                        shutil.copy(os.path.join(source_path,file), os.path.join(target_path['train'],str(idx)+file[-9:]))
 
     return True
 
-def copy_label2(main_path, train_set, test_set, val_set):
+def copy_label2(main_path, train_set, test_set, val_set, idx):
     target_path = {'train': 'dataset/training/label_2/', 'test': 'dataset/testing/label_2/'}
     ImageSets_path = 'dataset/ImageSets/'
     source_paths = []
@@ -165,9 +171,9 @@ def copy_label2(main_path, train_set, test_set, val_set):
     os.makedirs(ImageSets_path, exist_ok=True)
 
     # create train.txt and test.txt file if not exist
-    file_train = open(ImageSets_path+'train.txt','w')
-    file_test = open(ImageSets_path+'test.txt','w')
-    file_val = open(ImageSets_path+'val.txt','w')
+    # file_train = open(ImageSets_path+str(idx)+'train.txt','w')
+    # file_test = open(ImageSets_path+str(idx)+'test.txt','w')
+    # file_val = open(ImageSets_path+str(idx)+'val.txt','w')
 
     # select the file in train_set, test_set, val_set
     for source_path in source_paths:
@@ -198,25 +204,26 @@ def copy_label2(main_path, train_set, test_set, val_set):
                         fix_lines += fix_line
                 frame = file.replace('.txt','')
                 if frame in train_set:
-                    with open(os.path.join(target_path['train'],file[-10:]), 'w') as f:
+                    with open(os.path.join(target_path['train'],str(idx)+file[-9:]), 'w') as f:
                         f.writelines(fix_lines)
                 elif frame in test_set:
-                    with open(os.path.join(target_path['test'],file[-10:]), 'w') as f:
+                    with open(os.path.join(target_path['test'],str(idx)+file[-9:]), 'w') as f:
                         f.writelines(fix_lines)
                 elif frame in val_set:
-                    with open(os.path.join(target_path['train'],file[-10:]), 'w') as f:
+                    with open(os.path.join(target_path['train'],str(idx)+file[-9:]), 'w') as f:
                         f.writelines(fix_lines)
 
     return True
 
-def generate_imagesets(main_path, train_set, test_set, val_set):
+
+def generate_imagesets(main_path, train_set, test_set, val_set, idx):
     ImageSets_path = 'dataset/ImageSets/'
     os.makedirs(ImageSets_path, exist_ok=True)
 
     # create train.txt and test.txt file if not exist
-    file_train = open(ImageSets_path+'train.txt','w')
-    file_test = open(ImageSets_path+'test.txt','w')
-    file_val = open(ImageSets_path+'val.txt','w')
+    file_train = open(ImageSets_path+'train.txt','a')
+    file_test = open(ImageSets_path+'test.txt','a')
+    file_val = open(ImageSets_path+'val.txt','a')
 
     # print the file name in train_set, test_set, val_set, only the last 6 characters
 
@@ -226,26 +233,69 @@ def generate_imagesets(main_path, train_set, test_set, val_set):
     val_set = sorted(val_set)
 
     for file in train_set:
-        print(file[-6:],file = file_train)
+        file_train.write(str(idx)+file[-5:]+'\n')
     for file in test_set:
-        print(file[-6:],file = file_test)
+        file_test.write(str(idx)+file[-5:]+'\n')
     for file in val_set:
-        print(file[-6:],file = file_val)
+        file_val.write(str(idx)+file[-5:]+'\n')
+
+    file_train.close()
+    file_test.close()
+    file_val.close()
 
     return True
 
 
+
 def read_dataset_dir():
     set_label = ['50-25','75-37','100-50','125-67','150-75']
-    set_A_05 = ['1221_2116', '1223_1633', '1221_1951', '1223_1618', '1222_1620']
-    set_B_01 = ['1223_1749', '1223_1805', '1223_1819', '1223_1836', '1223_1915']
-    set_D_06 = ['1225_1955', '1225_2009', '1225_2024', '1225_2040', 'None']
+    set_A_05 = ['1226_2120', '1226_2132', '1226_2146', '1226_2200', '1226_2214']
+    set_B_02 = ['0104_2223', '0104_2309', '0104_2328', '0104_2343', '0105_0013']
+    set_D_06 = ['0104_1949', '0104_2002', '0104_2016', '0104_2032', '0104_2056']
     
     for i in range(len(set_label)):
-        subset = set_A_05[i]
-        dir_path = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+subset
-        print('Set: ', set_label[i], ' = ', subset)
+        subset = set_D_06[i]
+        dir = '/home/newDisk/tool/carla_dataset_tool/raw_data/record_2024_'+subset
+        for entry in os.scandir(dir):
+            if entry.is_dir() and entry.name.startswith("vehicle"):
+                print(i,"=",dir)
+                train_set, test_set, val_set, flag = get_inner_frame(dir, 12, 15)
+                copy_lidar2(dir, train_set, test_set, val_set, i)
+                print('Lidar copy done')
+                copy_image2(dir, train_set, test_set, val_set, flag, i)
+                print('Image copy done')
+                copy_label2(dir, train_set, test_set, val_set, i)
+                print('Label copy done')
+                generate_imagesets(dir, train_set, test_set, val_set, i)
+                print('Imagesets generate done')
+                copy_calib2()
 
+    # # combine the txt files into one
+    # # create the file
+    # file_train = open('dataset/ImageSets/train.txt','w')
+    # file_test = open('dataset/ImageSets/test.txt','w')
+    # file_val = open('dataset/ImageSets/val.txt','w')
+    # for i in range(len(set_label)):
+    #     sub_train = open('dataset/ImageSets/'+str(i)+'train.txt','r')
+    #     sub_test = open('dataset/ImageSets/'+str(i)+'test.txt','r')
+    #     sub_val = open('dataset/ImageSets/'+str(i)+'val.txt','r')
+    #     lines_train = sub_train.readlines()
+    #     lines_test = sub_test.readlines()
+    #     lines_val = sub_val.readlines()
+    #     file_train.writelines(lines_train)
+    #     file_test.writelines(lines_test)
+    #     file_val.writelines(lines_val)
+    #     sub_train.close()
+    #     sub_test.close()
+    #     sub_val.close()
+
+    # file_train.close()
+    # file_test.close()
+    # file_val.close()
+        
+
+
+            
 
 
     return
@@ -254,17 +304,22 @@ def read_dataset_dir():
 
 if __name__ == "__main__":
     os.makedirs('dataset', exist_ok=True)
-    main_path = read_main_path()
-    train_set, test_set, val_set, flag = get_inner_frame(main_path, 12, 15)
-    print('Set preparation done')
-    # print("train_set: ", train_set)
 
-    copy_lidar2(main_path, train_set, test_set, val_set)
-    print('Lidar copy done')
-    copy_image2(main_path, train_set, test_set, val_set, flag)
-    print('Image copy done')
-    copy_label2(main_path, train_set, test_set, val_set)
-    print('Label copy done')
-    generate_imagesets(main_path, train_set, test_set, val_set)
-    print('Imagesets generate done')
-    copy_calib2()
+    read_dataset_dir()
+
+
+
+    # main_path = read_main_path()
+    # train_set, test_set, val_set, flag = get_inner_frame(main_path, 12, 15)
+    # print('Set preparation done')
+    # # print("train_set: ", train_set)
+
+    # copy_lidar2(main_path, train_set, test_set, val_set)
+    # print('Lidar copy done')
+    # copy_image2(main_path, train_set, test_set, val_set, flag)
+    # print('Image copy done')
+    # copy_label2(main_path, train_set, test_set, val_set)
+    # print('Label copy done')
+    # generate_imagesets(main_path, train_set, test_set, val_set)
+    # print('Imagesets generate done')
+    # copy_calib2()

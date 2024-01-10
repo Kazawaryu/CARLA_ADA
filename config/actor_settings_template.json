@@ -5,7 +5,7 @@
             "type": "vehicle.tesla.model3",
             "name": "vehicle.tesla.model3.master",
             "sensors_setting": "sensor_config_template.json",
-            "spawn_point": 73
+            "spawn_point": 0
         }
     ],
     "other_vehicles":

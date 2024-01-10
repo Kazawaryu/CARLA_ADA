@@ -21,14 +21,14 @@ if __name__ == '__main__':
     # bin_path = '1130_1431'
     # label_path = '0000002983'
     # load point clouds
-    scan_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+bin_path+'/vehicle.tesla.model3.master/velodyne/' + label_path + '.bin'
+    scan_dir = '/home/newDisk/tool/carla_dataset_tool/raw_data/record_2024_'+bin_path+'/vehicle.tesla.model3.master/velodyne/' + label_path + '.bin'
     #scan_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/dataset/testing/velodyne/008571.bin'
     try:
         scan = np.fromfile(scan_dir, dtype=np.float32).reshape(-1, 4)
     except:
         scan = np.fromfile(scan_dir, dtype=np.float32).reshape(-1, 6)
     # load labels
-    label_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/raw_data/record_2023_'+bin_path+'/vehicle.tesla.model3.master/velodyne_semantic/' + label_path + '.txt'
+    label_dir = '/home/newDisk/tool/carla_dataset_tool/raw_data/record_2024_'+bin_path+'/vehicle.tesla.model3.master/velodyne_semantic/' + label_path + '.txt'
     #label_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/dataset/testing/label_2/008571.txt'
     with open(label_dir, 'r') as f:
         labels = f.readlines()
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         h, w, l, x, y, z, rot = map(float, [h, w, l, x, y, z, rot])
         print(lab, x, y, z, l, w, h, rot)
 
-        # sensor_yaw = 180
+        # sensor_yaw = 180 - 88.0929184 
         # sensor_rot_maxtrix_2d = np.array([[np.cos(np.deg2rad(sensor_yaw)), -np.sin(np.deg2rad(sensor_yaw))],
         #                                 [np.sin(np.deg2rad(sensor_yaw)), np.cos(np.deg2rad(sensor_yaw))]])
         

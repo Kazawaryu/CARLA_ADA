@@ -194,6 +194,10 @@ class ActorFactory(object):
 
     def create_other_vehicles(self, other_vehicles_info):
         blueprints = self.blueprint_lib.filter('vehicle.*')
+
+        # remove the blueprint name end with firetruck, european_hgv, fusorosa
+        blueprints = [bp for bp in blueprints if not bp.id.endswith('firetruck') and not bp.id.endswith('european_hgv') and not bp.id.endswith('fusorosa')]
+
         other_vehicle_nodes = []
         try:
             spawn_points = other_vehicles_info['spawn_points']

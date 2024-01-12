@@ -142,7 +142,7 @@ class ActiveLidar:
             elif _dist < self.PF_MAX_RANGE:
                 self.PF_O3D.points = o3d.utility.Vector3dVector(vehicle_points[actor.id][:, :3])
                 mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(self.PF_O3D, self.PF_ALPHA)
-                _mes = len(np.asarray(mesh.triangles))
+                _mes = min(2000, len(np.asarray(mesh.triangles)))
                 lambdas_.append(_mes)
                 dists_.append(_dist)
                 bsize_.append(sx_*sy_*sz_)

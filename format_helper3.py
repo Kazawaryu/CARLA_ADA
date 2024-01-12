@@ -73,10 +73,21 @@ def get_inner_frame(main_path, test_spilt, val_spilt):
 
         train_set = train_set | (lidar_set & image_set & label_set)
 
-        for i in range(len(train_set)//test_spilt):
-            test_set.add(train_set.pop())
-        for i in range(len(train_set)//val_spilt):
-            val_set.add(train_set.pop())
+        # random select test_spilt frames from train_set
+        for i in range(len(train_set)):
+            if i % test_spilt == 0:
+                test_set.append(train_set[i])
+                train_set[i] = 'none'
+            if i % val_spilt == 0:
+                val_set.append(train_set[i])
+                train_set[i] = 'none'
+
+        train_set = [x for x in train_set if x != 'none']
+
+        # for i in range(len(train_set)//test_spilt):
+        #     test_set.add(train_set.pop())
+        # for i in range(len(train_set)//val_spilt):
+        #     val_set.add(train_set.pop())
 
     return train_set, test_set, val_set, flag
 
@@ -270,56 +281,10 @@ def read_dataset_dir():
                 print('Imagesets generate done')
                 copy_calib2()
 
-    # # combine the txt files into one
-    # # create the file
-    # file_train = open('dataset/ImageSets/train.txt','w')
-    # file_test = open('dataset/ImageSets/test.txt','w')
-    # file_val = open('dataset/ImageSets/val.txt','w')
-    # for i in range(len(set_label)):
-    #     sub_train = open('dataset/ImageSets/'+str(i)+'train.txt','r')
-    #     sub_test = open('dataset/ImageSets/'+str(i)+'test.txt','r')
-    #     sub_val = open('dataset/ImageSets/'+str(i)+'val.txt','r')
-    #     lines_train = sub_train.readlines()
-    #     lines_test = sub_test.readlines()
-    #     lines_val = sub_val.readlines()
-    #     file_train.writelines(lines_train)
-    #     file_test.writelines(lines_test)
-    #     file_val.writelines(lines_val)
-    #     sub_train.close()
-    #     sub_test.close()
-    #     sub_val.close()
-
-    # file_train.close()
-    # file_test.close()
-    # file_val.close()
-        
-
-
-            
-
-
     return
 
 
 
 if __name__ == "__main__":
     os.makedirs('dataset', exist_ok=True)
-
     read_dataset_dir()
-
-
-
-    # main_path = read_main_path()
-    # train_set, test_set, val_set, flag = get_inner_frame(main_path, 12, 15)
-    # print('Set preparation done')
-    # # print("train_set: ", train_set)
-
-    # copy_lidar2(main_path, train_set, test_set, val_set)
-    # print('Lidar copy done')
-    # copy_image2(main_path, train_set, test_set, val_set, flag)
-    # print('Image copy done')
-    # copy_label2(main_path, train_set, test_set, val_set)
-    # print('Label copy done')
-    # generate_imagesets(main_path, train_set, test_set, val_set)
-    # print('Imagesets generate done')
-    # copy_calib2()

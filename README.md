@@ -20,13 +20,13 @@ Data collection tools with active data acquisition algorithm implemented for CAR
 
 - Python 3.8+
 
-- CARLA 0.9.14
+- CARLA 0.9.15
 
-- CUDA 11.1
+- CUDA 11.7
 
 ## Installation
 
-1. Download Carla version 0.9.14 [here](https://github.com/carla-simulator/carla).
+1. Download Carla version 0.9.15 [here](https://github.com/carla-simulator/carla).
 
 2. Build conda environment
    

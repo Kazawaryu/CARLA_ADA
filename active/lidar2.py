@@ -185,7 +185,7 @@ class ActiveLidar:
 
         lambdas_, dists_, bsize_, degree_ = np.array(lambdas_), np.array(dists_), np.array(bsize_), np.array(degree_)
         pf_l = dists_ / self.PF_MAX_RANGE
-        pf_score = (dists_**2 * lambdas_ / np.sqrt(bsize_)) / (self.PF_D * (pf_l * np.log(pf_l) + self.PF_H))
+        pf_score = (dists_**2 * lambdas_ / (bsize_*np.sqrt(bsize_))) / (self.PF_D * (pf_l * np.log(pf_l) + self.PF_H))
         pf_scalar = np.sum(pf_score)
         pf_degree = np.arctan2(np.sum(pf_score*np.cos(degree_)), np.sum(pf_score*np.sin(degree_)))
 

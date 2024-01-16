@@ -85,7 +85,7 @@ set_A_05 = ['1226_2120', '1226_2132', '1226_2146', '1226_2200', '1226_2214']
 set_B_02 = ['0104_2223', '0104_2309', '0104_2328', '0104_2343', '0105_0013']
 set_C_10 = ['0116_0117', '0116_0125', '0116_0132', '0116_0140', '0116_0149']
 set_D_06 = ['0104_1949', '0104_2002', '0104_2016', '0104_2032', '0104_2056']
-time_dirc_list = set_B_02
+time_dirc_list = set_C_10
 labels_list = set_label
 
 label_valid = {'Car', 'Truck', 'Bus'}
@@ -135,6 +135,6 @@ df['pf_vector'] = pf_vector_list
 df['s1_gt'] = s1_gt
 
 # save_path = './s1s2_score_D50.csv'
-save_path = '/home/newDisk/tool/carla_dataset_tool/ada_exp/parameters/s1/s1s2_score_B40.csv'
+save_path = '/home/newDisk/tool/carla_dataset_tool/ada_exp/parameters/s1/s1s2_score_C40.csv'
 
 df.to_csv(save_path, index=False)

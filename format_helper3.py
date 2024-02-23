@@ -73,12 +73,17 @@ def get_inner_frame(main_path, test_spilt, val_spilt):
 
         train_set = train_set | (lidar_set & image_set & label_set)
 
+        train_set = list(train_set)
+        test_set = []
+        val_set = []
+
         # random select test_spilt frames from train_set
         for i in range(len(train_set)):
             if i % test_spilt == 0:
                 test_set.append(train_set[i])
                 train_set[i] = 'none'
             if i % val_spilt == 0:
+                print('val_set:',train_set[i])
                 val_set.append(train_set[i])
                 train_set[i] = 'none'
 
@@ -266,7 +271,7 @@ def read_dataset_dir():
     set_D_06 = ['0104_1949', '0104_2002', '0104_2016', '0104_2032', '0104_2056']
     
     for i in range(len(set_label)):
-        subset = set_D_06[i]
+        subset = set_C_10[i]
         dir = '/home/newDisk/tool/carla_dataset_tool/raw_data/record_2024_'+subset
         for entry in os.scandir(dir):
             if entry.is_dir() and entry.name.startswith("vehicle"):

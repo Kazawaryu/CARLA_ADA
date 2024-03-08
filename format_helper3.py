@@ -265,13 +265,13 @@ def generate_imagesets(main_path, train_set, test_set, val_set, idx):
 
 def read_dataset_dir():
     set_label = ['50-25','75-37','100-50','125-67','150-75']
-    set_A_05 = ['1226_2120', '1226_2132', '1226_2146', '1226_2200', '1226_2214']
+    set_A_05 = ['0121_0157', '0121_0204', '0121_0211', '0121_0219', '0121_0227']
     set_B_02 = ['0104_2223', '0104_2309', '0104_2328', '0104_2343', '0105_0013']
     set_C_10 = ['0116_0117', '0116_0125', '0116_0132', '0116_0140', '0116_0149']
     set_D_06 = ['0104_1949', '0104_2002', '0104_2016', '0104_2032', '0104_2056']
     
     for i in range(len(set_label)):
-        subset = set_C_10[i]
+        subset = set_A_05[i]
         dir = '/home/newDisk/tool/carla_dataset_tool/raw_data/record_2024_'+subset
         for entry in os.scandir(dir):
             if entry.is_dir() and entry.name.startswith("vehicle"):

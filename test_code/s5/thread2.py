@@ -1,0 +1,1 @@
+print('I am thread2.py')

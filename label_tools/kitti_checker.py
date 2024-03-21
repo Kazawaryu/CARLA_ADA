@@ -17,9 +17,9 @@ def read_args():
     return bin_path, label_path
 
 if __name__ == '__main__':
-    bin_path, label_path = read_args()
-    # bin_path = '1130_1431'
-    # label_path = '0000002983'
+    # bin_path, label_path = read_args()
+    bin_path = '0104_2032'
+    label_path = '0000036154'
     # load point clouds
     scan_dir = '/home/newDisk/tool/carla_dataset_tool/raw_data/record_2024_'+bin_path+'/vehicle.tesla.model3.master/velodyne/' + label_path + '.bin'
     #scan_dir = '/home/ghosnp/project/fix_space/origin/carla_dataset_tools/dataset/testing/velodyne/008571.bin'
@@ -91,6 +91,6 @@ if __name__ == '__main__':
         draw(corners_3d[5], corners_3d[1], 0)
         draw(corners_3d[6], corners_3d[2])
         draw(corners_3d[7], corners_3d[3])
-
+        
     mlab.view(azimuth=230, distance=50)
     mlab.show()

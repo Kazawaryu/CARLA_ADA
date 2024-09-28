@@ -1,6 +1,5 @@
 # Active Data Acquisition in Autonomous Driving Simulation
 
-![](images/S4.png)
 
 Data collection tools with active data acquisition algorithm implemented for CARLA Simulator.
 
